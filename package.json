@@ -1,0 +1,10 @@
+{
+  "name": "prelevements-gps-anrac",
+  "version": "1.0.0",
+  "description": "Outil de terrain ANRAC — parcelle agricole et points de prélèvement GPS",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -l 3000",
+    "build": "echo 'Static site — no build step needed'"
+  }
+}
