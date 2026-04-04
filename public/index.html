@@ -111,11 +111,28 @@ aside{background:var(--panel);border-right:1px solid var(--border);display:flex;
 #toast.show{opacity:1;transform:translateY(0);}
 #toast.error{border-color:var(--red);color:var(--red);}
 
+/* HELP BUTTON */
+.help-btn{font-family:var(--mono);font-size:13px;color:var(--muted);background:none;border:1px solid var(--border);width:28px;height:28px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.help-btn:hover{border-color:var(--olive-lit);color:var(--olive-lit);}
+
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:none;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--panel);border:1px solid var(--border);padding:24px;min-width:320px;max-width:90vw;}
-.modal h3{font-family:var(--mono);font-size:12px;color:var(--olive-lit);letter-spacing:2px;margin-bottom:16px;}
+.modal{background:var(--panel);border:1px solid var(--border);padding:28px 32px;min-width:320px;max-width:620px;max-height:85vh;overflow-y:auto;position:relative;}
+.modal::-webkit-scrollbar{width:4px;}
+.modal::-webkit-scrollbar-track{background:var(--bg);}
+.modal::-webkit-scrollbar-thumb{background:var(--border);}
+.modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;transition:color .15s;}
+.modal-close:hover{color:var(--red);}
+.modal h2{font-family:var(--mono);font-size:14px;color:var(--olive-lit);letter-spacing:2px;margin-bottom:20px;padding-right:30px;}
+.modal h3{font-family:var(--mono);font-size:11px;color:var(--olive-lit);letter-spacing:2px;margin:20px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.modal p{font-size:13px;color:var(--text);line-height:1.7;margin-bottom:8px;}
+.modal ul{margin:0 0 12px 18px;font-size:13px;color:var(--text);line-height:1.8;}
+.modal li strong{color:var(--amber);}
+.modal .steps{counter-reset:step;list-style:none;margin-left:0;padding-left:0;}
+.modal .steps li{counter-increment:step;padding-left:28px;position:relative;margin-bottom:6px;}
+.modal .steps li::before{content:counter(step);position:absolute;left:0;font-family:var(--mono);font-size:11px;color:#000;background:var(--olive-lit);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50;}
+.modal .tech{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:16px;padding-top:12px;border-top:1px solid var(--border);line-height:1.8;}
 .modal .config-row{margin-bottom:12px;}
 .modal-btns{display:flex;gap:8px;margin-top:18px;}
 .modal-btns .btn{flex:1;}
@@ -136,7 +153,55 @@ aside{background:var(--panel);border-right:1px solid var(--border);display:flex;
     <div class="dot"></div>
     <span id="status-text">EN ATTENTE</span>
   </div>
+  <button class="help-btn" onclick="toggleHelp()" title="À propos">?</button>
 </header>
+
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="help-modal" onclick="if(event.target===this)toggleHelp()">
+  <div class="modal">
+    <button class="modal-close" onclick="toggleHelp()">✕</button>
+    <h2>Prélèvements GPS — ANRAC</h2>
+    <p>Outil de terrain pour définir les champs d'une exploitation agricole et générer automatiquement les points de prélèvement GPS avec export des coordonnées.</p>
+
+    <h3>Gestion multi-parcelles</h3>
+    <ul>
+      <li>Dessinez autant de champs que nécessaire directement sur la carte</li>
+      <li>Chaque champ possède un nom personnalisé, une couleur distincte et un label visible</li>
+      <li>Sélection, suppression et régénération par champ</li>
+    </ul>
+
+    <h3>Génération automatique des points</h3>
+    <p>Trois méthodes de prélèvement disponibles :</p>
+    <ul>
+      <li><strong>Grille régulière</strong> — points uniformément espacés dans le champ</li>
+      <li><strong>Zigzag (W)</strong> — parcours en W, classique pour les prélèvements de sol</li>
+      <li><strong>Aléatoire stratifié</strong> — points aléatoires avec distance minimum entre eux</li>
+    </ul>
+    <p>La densité est configurable de 0.5 à 20 points par hectare.</p>
+
+    <h3>Comment utiliser</h3>
+    <ol class="steps">
+      <li>Saisissez le nom du champ (ex: "Blé Nord")</li>
+      <li>Cliquez <strong>Dessiner sur la carte</strong> et tracez les limites en cliquant les sommets</li>
+      <li>Choisissez la méthode de génération et la densité souhaitée</li>
+      <li>Cliquez <strong>Générer les points</strong></li>
+      <li>Répétez pour chaque champ de l'exploitation</li>
+      <li>Exportez les coordonnées en CSV, GeoJSON ou KML</li>
+    </ol>
+
+    <h3>Export des données</h3>
+    <ul>
+      <li><strong>CSV</strong> — colonnes : Champ, Label, Latitude, Longitude (8 décimales)</li>
+      <li><strong>GeoJSON</strong> — FeatureCollection avec points et polygones des parcelles</li>
+      <li><strong>KML</strong> — Placemarks organisés par dossier (un par champ)</li>
+    </ul>
+
+    <div class="tech">
+      Leaflet.js 1.9.4 · Leaflet.draw 1.0.4 · CartoDB Dark · Share Tech Mono + Barlow Condensed<br>
+      Usage interne ANRAC
+    </div>
+  </div>
+</div>
 
 <aside>
   <!-- ADD FIELD -->
@@ -690,6 +755,10 @@ function toast(msg, isError) {
 
 function setStatus(t) {
   document.getElementById('status-text').textContent = t;
+}
+
+function toggleHelp() {
+  document.getElementById('help-modal').classList.toggle('open');
 }
 </script>
 </body>
