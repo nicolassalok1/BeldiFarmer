@@ -1,58 +1,73 @@
-# Prélèvements GPS — ANRAC
+# React + TypeScript + Vite
 
-Outil de terrain pour définir les champs d'une exploitation agricole et générer automatiquement les points de prélèvement GPS avec export des coordonnées.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Fonctionnalités
+Currently, two official plugins are available:
 
-### Gestion multi-parcelles
-- Dessinez autant de champs que nécessaire directement sur la carte
-- Chaque champ possède un nom personnalisé, une couleur distincte et un label visible sur la carte
-- Sélection, suppression et régénération par champ
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### Génération automatique des points de prélèvement
-Trois méthodes disponibles :
-- **Grille régulière** — points uniformément espacés dans le champ
-- **Zigzag (W)** — parcours en W, classique pour les prélèvements de sol
-- **Aléatoire stratifié** — points aléatoires avec distance minimum entre eux pour éviter les regroupements
+## React Compiler
 
-La densité est configurable de 0.5 à 20 points par hectare.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### Statistiques en temps réel
-- Nombre de champs
-- Surface totale (hectares)
-- Nombre de points de prélèvement
+## Expanding the ESLint configuration
 
-### Export des données
-- **CSV** — colonnes : Champ, Label, Latitude, Longitude (8 décimales)
-- **GeoJSON** — FeatureCollection avec points et polygones des parcelles
-- **KML** — Placemarks organisés par dossier (un par champ)
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## Utilisation
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-1. Saisissez le nom du champ (ex: "Blé Nord")
-2. Cliquez **Dessiner sur la carte** et tracez les limites en cliquant les sommets
-3. Choisissez la méthode de génération et la densité souhaitée
-4. Cliquez **Générer les points**
-5. Répétez pour chaque champ de l'exploitation
-6. Exportez les coordonnées en CSV, GeoJSON ou KML
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-## Stack technique
-
-- HTML / CSS / JavaScript (vanilla, fichier unique)
-- [Leaflet.js 1.9.4](https://leafletjs.com/) — carte interactive
-- [Leaflet.draw 1.0.4](https://leaflet.github.io/Leaflet.draw/) — dessin de polygones
-- Fond de carte CartoDB Dark
-- Google Fonts : Share Tech Mono + Barlow Condensed
-
-## Déploiement
-
-Site statique hébergé sur Vercel. Chaque push sur `main` déclenche un redéploiement automatique.
-
-```bash
-# Développement local
-npx serve public -l 3000
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## Licence
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-Usage interne ANRAC.
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
