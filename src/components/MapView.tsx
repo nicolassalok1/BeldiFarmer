@@ -26,10 +26,23 @@ export function MapView() {
       zoomControl: true,
     })
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '© Esri',
+      maxZoom: 19,
+    })
+
+    const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '© CartoDB',
       maxZoom: 20,
-    }).addTo(map)
+    })
+
+    satellite.addTo(map)
+
+    L.control.layers(
+      { 'Satellite': satellite, 'Sombre': dark },
+      {},
+      { position: 'topright', collapsed: false }
+    ).addTo(map)
 
     const drawnItems = new L.FeatureGroup().addTo(map)
     drawnRef.current = drawnItems
