@@ -173,7 +173,9 @@ export function Sidebar() {
           <button className="btn-cyan flex-1 text-[10px] py-1" onClick={handleSave}>↓ Sauvegarder</button>
           <button className="btn-active flex-1 text-[10px] py-1" onClick={handleLoad}>↑ Charger</button>
         </div>
-        <button className="btn-danger w-full text-[10px] py-1 mt-0.5" onClick={handleClearAll}>✕ Tout effacer</button>
+        <button className="btn-danger w-full text-[10px] py-1 mt-0.5" onClick={() => {
+          if (window.confirm('Êtes-vous sûr de vouloir tout effacer ?\nCette action est irréversible.')) handleClearAll()
+        }}>✕ Tout effacer</button>
       </Section>
 
       {/* Field list */}
