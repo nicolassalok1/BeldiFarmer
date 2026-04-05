@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
+import 'leaflet-draw'
 import { useAppStore, FIELD_COLORS } from '../store/useAppStore'
 import { calcArea, calcPerimeter, isInsidePolygon } from '../utils/geometry'
 import { generatePoints } from '../utils/generators'
@@ -103,7 +104,7 @@ export function MapView() {
 
     if (drawTarget === 'exploit') {
       containerRef.current?.classList.add('cursor-crosshair')
-      const handler = new L.Draw.Polygon(map, {
+      const handler = new L.Draw.Polygon(map as any, {
         shapeOptions: { color: '#4fa8a0', weight: 3, fillColor: '#4fa8a0', fillOpacity: 0.06, dashArray: '8 4' },
       })
       handler.enable()
@@ -112,7 +113,7 @@ export function MapView() {
       containerRef.current?.classList.add('cursor-crosshair')
       const store = useAppStore.getState()
       const color = FIELD_COLORS[store.fieldIdCounter % FIELD_COLORS.length]
-      const handler = new L.Draw.Polygon(map, {
+      const handler = new L.Draw.Polygon(map as any, {
         shapeOptions: { color, weight: 2, fillColor: color, fillOpacity: 0.15 },
       })
       handler.enable()

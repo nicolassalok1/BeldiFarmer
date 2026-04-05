@@ -5,7 +5,10 @@
       "Bash(rm -rf src/assets)",
       "Bash(rm -f public/vite.svg)",
       "Bash(mkdir -p src/components src/store src/utils src/types)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s http://localhost:4173)",
+      "Bash(curl -s http://localhost:5173/src/main.tsx)"
     ]
   }
 }
