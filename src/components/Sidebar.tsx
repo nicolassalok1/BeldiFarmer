@@ -1,6 +1,5 @@
 import { useAppStore } from '../store/useAppStore'
 import { StepIndicator } from './StepIndicator'
-import { FieldList } from './FieldList'
 import { exportCSV, exportGeoJSON, exportKML, exportProject, parseProjectFile } from '../utils/exporters'
 import { saveToStorage } from '../utils/persistence'
 import type { GenerationMethod } from '../types'
@@ -178,11 +177,6 @@ export function Sidebar() {
         }}>✕ Tout effacer</button>
       </Section>
 
-      {/* Field list */}
-      <div className="px-4 py-2 border-b border-border">
-        <SectionTitle>Champs & points</SectionTitle>
-      </div>
-      <FieldList />
     </aside>
   )
 }
