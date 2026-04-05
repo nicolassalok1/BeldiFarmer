@@ -404,21 +404,20 @@ function WateringTab() {
         <div className="w-[200px]"><FieldSelector value={filterField} onChange={setFilterField} label="Filtre" /></div>
       </div>
       {sorted.length ? (
-        <div className="border border-border">
-          <div className="grid grid-cols-[80px_1fr_100px_60px_60px_30px] gap-0 text-[9px] font-mono text-muted uppercase tracking-[.5px] border-b border-border bg-bg/50">
-            <div className="px-2 py-1.5">Date</div><div className="px-2 py-1.5">Champ</div><div className="px-2 py-1.5">Méthode</div>
-            <div className="px-2 py-1.5 text-right">Durée</div><div className="px-2 py-1.5 text-right">Vol.</div><div></div>
-          </div>
+        <div className="space-y-1">
           {sorted.map((w) => {
             const f = store.fields.find((f) => f.id === w.fieldId)
             return (
-              <div key={w.id} className="grid grid-cols-[80px_1fr_100px_60px_60px_30px] gap-0 text-xs font-mono border-b border-border/30 hover:bg-olive/5">
-                <div className="px-2 py-1.5 text-muted">{w.date}</div>
-                <div className="px-2 py-1.5 text-text">{f?.name || '?'}</div>
-                <div className="px-2 py-1.5 text-muted">{IRRIGATION_LABELS[w.method]}</div>
-                <div className="px-2 py-1.5 text-right text-cyan">{w.durationMin}′</div>
-                <div className="px-2 py-1.5 text-right text-muted">{w.volumeL ? `${w.volumeL}L` : '—'}</div>
-                <div className="px-1 py-1.5"><button onClick={() => store.removeWatering(w.id)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button></div>
+              <div key={w.id} className="border border-border p-2.5 hover:bg-olive/5 transition-colors">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-mono text-[10px] text-muted">{w.date}</span>
+                  <span className="font-mono text-xs text-text font-bold">{f?.name || '?'}</span>
+                  <span className="font-mono text-[10px] bg-panel border border-border px-1.5 py-px text-muted">{IRRIGATION_LABELS[w.method]}</span>
+                  <span className="font-mono text-xs text-cyan">{w.durationMin} min</span>
+                  {w.volumeL && <span className="font-mono text-xs text-muted">{w.volumeL} L</span>}
+                  <button onClick={() => store.removeWatering(w.id)} className="ml-auto text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button>
+                </div>
+                {w.notes && <div className="font-mono text-[10px] text-muted mt-1.5 border-t border-border/30 pt-1 italic">{w.notes}</div>}
               </div>
             )
           })}
@@ -501,21 +500,20 @@ function AmendmentsTab() {
         <div className="w-[200px]"><FieldSelector value={filterField} onChange={setFilterField} label="Filtre" /></div>
       </div>
       {sorted.length ? (
-        <div className="border border-border">
-          <div className="grid grid-cols-[80px_1fr_80px_1fr_60px_30px] gap-0 text-[9px] font-mono text-muted uppercase tracking-[.5px] border-b border-border bg-bg/50">
-            <div className="px-2 py-1.5">Date</div><div className="px-2 py-1.5">Champ</div><div className="px-2 py-1.5">Type</div>
-            <div className="px-2 py-1.5">Produit</div><div className="px-2 py-1.5 text-right">Qté</div><div></div>
-          </div>
+        <div className="space-y-1">
           {sorted.map((a) => {
             const f = store.fields.find((f) => f.id === a.fieldId)
             return (
-              <div key={a.id} className="grid grid-cols-[80px_1fr_80px_1fr_60px_30px] gap-0 text-xs font-mono border-b border-border/30 hover:bg-olive/5">
-                <div className="px-2 py-1.5 text-muted">{a.date}</div>
-                <div className="px-2 py-1.5 text-text">{f?.name || '?'}</div>
-                <div className="px-2 py-1.5 text-muted">{AMENDMENT_LABELS[a.type]}</div>
-                <div className="px-2 py-1.5 text-amber">{a.product}</div>
-                <div className="px-2 py-1.5 text-right text-olive-lit">{a.quantityKg}kg</div>
-                <div className="px-1 py-1.5"><button onClick={() => store.removeAmendment(a.id)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button></div>
+              <div key={a.id} className="border border-border p-2.5 hover:bg-olive/5 transition-colors">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-mono text-[10px] text-muted">{a.date}</span>
+                  <span className="font-mono text-xs text-text font-bold">{f?.name || '?'}</span>
+                  <span className="font-mono text-[10px] bg-panel border border-border px-1.5 py-px text-muted">{AMENDMENT_LABELS[a.type]}</span>
+                  <span className="font-mono text-xs text-amber">{a.product}</span>
+                  <span className="font-mono text-xs text-olive-lit">{a.quantityKg} kg</span>
+                  <button onClick={() => store.removeAmendment(a.id)} className="ml-auto text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button>
+                </div>
+                {a.notes && <div className="font-mono text-[10px] text-muted mt-1.5 border-t border-border/30 pt-1 italic">{a.notes}</div>}
               </div>
             )
           })}
