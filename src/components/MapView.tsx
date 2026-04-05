@@ -4,6 +4,7 @@ import 'leaflet-draw'
 import { useAppStore, FIELD_COLORS } from '../store/useAppStore'
 import { calcArea, calcPerimeter, isInsidePolygon } from '../utils/geometry'
 import { generatePoints } from '../utils/generators'
+import { loadFromStorage } from '../utils/persistence'
 import type { LatLng, Field } from '../types'
 
 export function MapView() {
@@ -104,6 +105,9 @@ export function MapView() {
     })
 
     mapRef.current = map
+
+    // Restore persisted data
+    restorePersistedData(map)
 
     return () => { map.remove() }
   }, [])
@@ -269,4 +273,91 @@ function generateForField(
   })
 
   return { ...field, points, pointMarkers }
+}
+
+// ── Restore persisted data ──
+
+function restorePersistedData(map: L.Map) {
+  const saved = loadFromStorage()
+  if (!saved) return
+
+  const store = useAppStore.getState()
+
+  // Restore config
+  if (saved.generationMethod) store.setGenerationMethod(saved.generationMethod as any)
+  if (saved.density) store.setDensity(saved.density)
+
+  // Restore exploitation
+  if (saved.exploitPolygon && saved.exploitPolygon.length > 0) {
+    const leafletLatLngs = saved.exploitPolygon.map((ll) => L.latLng(ll.lat, ll.lng))
+    const layer = L.polygon(leafletLatLngs, {
+      color: '#4fa8a0', weight: 3, fillColor: '#4fa8a0', fillOpacity: 0.06, dashArray: '8 4',
+    }).addTo(map)
+
+    const center = layer.getBounds().getCenter()
+    const label = L.marker(center, {
+      icon: L.divIcon({
+        html: '<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;color:#4fa8a0;text-shadow:0 0 6px #000,0 0 12px #000;white-space:nowrap">EXPLOITATION</div>',
+        iconSize: [0, 0], className: '',
+      }),
+    }).addTo(map)
+
+    store.setExploitation(saved.exploitPolygon, saved.exploitArea, layer, label)
+  }
+
+  // Restore fields
+  if (saved.fields && saved.fields.length > 0) {
+    saved.fields.forEach((sf) => {
+      const leafletLatLngs = sf.latlngs.map((ll) => L.latLng(ll.lat, ll.lng))
+      const layer = L.polygon(leafletLatLngs, {
+        color: sf.color, weight: 2, fillColor: sf.color, fillOpacity: 0.15,
+      }).addTo(map)
+
+      const center = layer.getBounds().getCenter()
+      const labelMarker = L.marker(center, {
+        icon: L.divIcon({
+          html: `<div style="font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;color:${sf.color};text-shadow:0 0 4px #000,0 0 8px #000;white-space:nowrap">${sf.name}</div>`,
+          iconSize: [0, 0], className: '',
+        }),
+      }).addTo(map)
+
+      // Restore point markers
+      const pointMarkers = sf.points.map((pt, i) => {
+        const icon = L.divIcon({
+          html: `<div style="
+            background:${sf.color};color:#000;
+            font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;
+            width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+            border:2px solid #0d1117;border-radius:50%;box-shadow:0 0 0 1px ${sf.color};
+          ">${i + 1}</div>`,
+          iconSize: [24, 24], iconAnchor: [12, 12],
+        })
+        return L.marker([pt.lat, pt.lng], { icon })
+          .addTo(map)
+          .bindPopup(`<b>${pt.label}</b><br>${sf.name}<br>Lat: ${pt.lat.toFixed(6)}<br>Lng: ${pt.lng.toFixed(6)}`)
+      })
+
+      const field: Field = {
+        id: sf.id,
+        name: sf.name,
+        color: sf.color,
+        latlngs: sf.latlngs,
+        area: sf.area,
+        perimeter: sf.perimeter,
+        points: sf.points,
+        layer,
+        labelMarker,
+        pointMarkers,
+      }
+
+      store.addField(field)
+    })
+
+    // Restore counter
+    if (saved.fieldIdCounter) {
+      useAppStore.setState({ fieldIdCounter: saved.fieldIdCounter })
+    }
+  }
+
+  store.setStatus(saved.exploitPolygon ? (saved.fields.length > 0 ? 'DONNÉES RESTAURÉES' : 'AJOUTEZ VOS CHAMPS') : 'EN ATTENTE')
 }
