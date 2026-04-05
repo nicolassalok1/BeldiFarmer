@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { AppState } from '../types'
-import { saveToStorage, clearStorage } from '../utils/persistence'
+import { saveToStorage } from '../utils/persistence'
 
 export const FIELD_COLORS = [
   '#8fa84f', '#e6a817', '#a84f6a', '#4f6aa8', '#a8854f',
@@ -19,10 +19,16 @@ function persist(state: AppState) {
       area: f.area,
       perimeter: f.perimeter,
       points: f.points,
+      culture: f.culture,
+      assignedEmployees: f.assignedEmployees,
+      assignedManager: f.assignedManager,
     })),
     fieldIdCounter: state.fieldIdCounter,
     generationMethod: state.generationMethod,
     density: state.density,
+    employees: state.employees,
+    employeeIdCounter: state.employeeIdCounter,
+    strains: state.strains,
   })
 }
 
@@ -45,14 +51,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   generationMethod: 'grid',
   density: 1,
 
+  // Personnel
+  employees: [],
+  employeeIdCounter: 0,
+
+  // Strains
+  strains: [],
+
   // UI
   currentStep: 1,
   toastMessage: null,
   toastError: false,
   statusText: 'EN ATTENTE',
   helpOpen: false,
+  dashboardOpen: false,
+  dashboardTab: 'params',
 
-  // Actions
+  // ── Actions ──
+
   setExploitation: (polygon, area, layer, label) => {
     set({ exploitPolygon: polygon, exploitArea: area, exploitLayer: layer, exploitLabel: label, currentStep: 2 })
     persist(get())
@@ -90,6 +106,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   selectField: (id) => set({ selectedFieldId: id }),
 
+  updateField: (id, updates) => {
+    set((s) => ({
+      fields: s.fields.map((f) => f.id === id ? { ...f, ...updates } : f),
+    }))
+    persist(get())
+  },
+
   setFieldPoints: (fieldId, points, markers) => {
     set((s) => ({
       fields: s.fields.map((f) =>
@@ -123,17 +146,72 @@ export const useAppStore = create<AppState>((set, get) => ({
     persist(get())
   },
 
+  // ── Personnel ──
+
+  addEmployee: (emp) => {
+    set((s) => ({
+      employees: [...s.employees, { ...emp, id: s.employeeIdCounter + 1 }],
+      employeeIdCounter: s.employeeIdCounter + 1,
+    }))
+    persist(get())
+  },
+
+  updateEmployee: (id, updates) => {
+    set((s) => ({
+      employees: s.employees.map((e) => e.id === id ? { ...e, ...updates } : e),
+    }))
+    persist(get())
+  },
+
+  removeEmployee: (id) => {
+    set((s) => ({
+      employees: s.employees.filter((e) => e.id !== id),
+      // Also remove from field assignments
+      fields: s.fields.map((f) => ({
+        ...f,
+        assignedEmployees: f.assignedEmployees.filter((eid) => eid !== id),
+        assignedManager: f.assignedManager === id ? null : f.assignedManager,
+      })),
+    }))
+    persist(get())
+  },
+
+  // ── Strains ──
+
+  addStrain: (strain) => {
+    set((s) => ({
+      strains: s.strains.includes(strain) ? s.strains : [...s.strains, strain],
+    }))
+    persist(get())
+  },
+
+  removeStrain: (strain) => {
+    set((s) => ({
+      strains: s.strains.filter((st) => st !== strain),
+    }))
+    persist(get())
+  },
+
+  // ── UI ──
+
   toast: (message, error = false) => set({ toastMessage: message, toastError: error }),
   clearToast: () => set({ toastMessage: null, toastError: false }),
   setStatus: (text) => set({ statusText: text }),
   setHelpOpen: (open) => set({ helpOpen: open }),
+  setDashboardOpen: (open) => set({ dashboardOpen: open }),
+  setDashboardTab: (tab) => set({ dashboardTab: tab }),
 
   clearAll: () => {
-    set({
+    set((s) => ({
       exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,
       fields: [], fieldIdCounter: 0, selectedFieldId: null,
       drawTarget: null, currentStep: 1, statusText: 'EN ATTENTE',
-    })
-    clearStorage()
+      // Keep employees and strains — they are reusable
+      employees: s.employees,
+      employeeIdCounter: s.employeeIdCounter,
+      strains: s.strains,
+    }))
+    // Persist to keep employees/strains
+    persist(get())
   },
 }))

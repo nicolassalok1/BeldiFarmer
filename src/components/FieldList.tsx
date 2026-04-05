@@ -1,11 +1,13 @@
 import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
+import type { Field } from '../types'
 
 export function FieldList() {
   const fields = useAppStore((s) => s.fields)
   const selectedFieldId = useAppStore((s) => s.selectedFieldId)
   const selectField = useAppStore((s) => s.selectField)
   const exploitPolygon = useAppStore((s) => s.exploitPolygon)
+  const employees = useAppStore((s) => s.employees)
 
   if (!fields.length) {
     return (
@@ -45,6 +47,7 @@ export function FieldList() {
             <div className="font-mono text-[10px] text-muted leading-relaxed">
               {f.area.toFixed(2)} ha · {Math.round(f.perimeter)} m
             </div>
+            <FieldMeta field={f} employees={employees} />
             <div className="flex gap-1 mt-1.5">
               <button
                 className="btn-sm btn-amber"
@@ -101,6 +104,35 @@ export function FieldList() {
           ))}
         </div>
       ))}
+    </div>
+  )
+}
+
+function FieldMeta({ field, employees }: { field: Field; employees: { id: number; name: string; role: string }[] }) {
+  const culture = field.culture
+  const manager = field.assignedManager ? employees.find((e) => e.id === field.assignedManager) : null
+  const assigned = field.assignedEmployees.map((eid) => employees.find((e) => e.id === eid)).filter(Boolean)
+
+  if (!culture && !manager && assigned.length === 0) return null
+
+  return (
+    <div className="mt-1 font-mono text-[9px] text-muted leading-relaxed space-y-0.5">
+      {culture && (
+        <div>
+          <span className="text-olive-lit">Culture:</span>{' '}
+          {culture.seedType === 'beldia' ? 'Beldia' : `Cali${culture.strain ? ' — ' + culture.strain : ''}`}
+        </div>
+      )}
+      {manager && (
+        <div>
+          <span className="text-amber">Resp:</span> {manager.name}
+        </div>
+      )}
+      {assigned.length > 0 && (
+        <div>
+          <span className="text-olive-lit">Équipe:</span> {assigned.map((e) => e!.name).join(', ')}
+        </div>
+      )}
     </div>
   )
 }

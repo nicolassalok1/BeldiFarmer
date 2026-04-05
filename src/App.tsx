@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar'
 import { MapView } from './components/MapView'
 import { Toast } from './components/Toast'
 import { HelpModal } from './components/HelpModal'
+import { Dashboard } from './components/Dashboard'
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <MapView />
       <Toast />
       <HelpModal />
+      <Dashboard />
     </div>
   )
 }

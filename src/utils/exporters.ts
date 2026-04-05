@@ -1,4 +1,4 @@
-import type { Field, LatLng } from '../types'
+import type { Field, LatLng, Employee } from '../types'
 import type { PersistedData } from './persistence'
 
 interface ExportPoint {
@@ -97,7 +97,17 @@ export function exportKML(fields: Field[]): number {
 
 // ── Export/Import projet complet ──
 
-export function exportProject(fields: Field[], exploitPolygon: LatLng[] | null, exploitArea: number, fieldIdCounter: number, generationMethod: string, density: number): boolean {
+export function exportProject(
+  fields: Field[],
+  exploitPolygon: LatLng[] | null,
+  exploitArea: number,
+  fieldIdCounter: number,
+  generationMethod: string,
+  density: number,
+  employees: Employee[] = [],
+  employeeIdCounter: number = 0,
+  strains: string[] = [],
+): boolean {
   const data: PersistedData = {
     exploitPolygon,
     exploitArea,
@@ -109,10 +119,16 @@ export function exportProject(fields: Field[], exploitPolygon: LatLng[] | null, 
       area: f.area,
       perimeter: f.perimeter,
       points: f.points,
+      culture: f.culture,
+      assignedEmployees: f.assignedEmployees,
+      assignedManager: f.assignedManager,
     })),
     fieldIdCounter,
     generationMethod,
     density,
+    employees,
+    employeeIdCounter,
+    strains,
   }
 
   if (!data.exploitPolygon && data.fields.length === 0) return false

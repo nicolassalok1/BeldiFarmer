@@ -225,6 +225,8 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
     area,
     perimeter,
     points: [],
+    assignedEmployees: [],
+    assignedManager: null,
     layer,
     labelMarker,
     pointMarkers: [],
@@ -345,6 +347,9 @@ function restorePersistedData(map: L.Map) {
         area: sf.area,
         perimeter: sf.perimeter,
         points: sf.points,
+        culture: sf.culture,
+        assignedEmployees: sf.assignedEmployees || [],
+        assignedManager: sf.assignedManager ?? null,
         layer,
         labelMarker,
         pointMarkers,
@@ -357,6 +362,14 @@ function restorePersistedData(map: L.Map) {
     if (saved.fieldIdCounter) {
       useAppStore.setState({ fieldIdCounter: saved.fieldIdCounter })
     }
+  }
+
+  // Restore employees and strains
+  if (saved.employees?.length) {
+    useAppStore.setState({ employees: saved.employees, employeeIdCounter: saved.employeeIdCounter || 0 })
+  }
+  if (saved.strains?.length) {
+    useAppStore.setState({ strains: saved.strains })
   }
 
   store.setStatus(saved.exploitPolygon ? (saved.fields.length > 0 ? 'DONNÉES RESTAURÉES' : 'AJOUTEZ VOS CHAMPS') : 'EN ATTENTE')

@@ -207,6 +207,9 @@ export function Sidebar() {
                 store.fieldIdCounter,
                 store.generationMethod,
                 store.density,
+                store.employees,
+                store.employeeIdCounter,
+                store.strains,
               )
               if (ok) store.toast('✓ Projet exporté en JSON')
               else store.toast('⚠ Rien à exporter', true)
