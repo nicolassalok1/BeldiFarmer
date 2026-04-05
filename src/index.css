@@ -93,6 +93,11 @@ body {
   50% { opacity: 0.3; }
 }
 
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 /* Button base */
 .btn-base, .btn-full, .btn-sm, .btn-active, .btn-danger, .btn-amber, .btn-cyan {
   font-family: var(--font-ui);

@@ -219,6 +219,9 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
   layer.setStyle({ color, weight: 2, fillColor: color, fillOpacity: 0.15 })
   layer.addTo(map)
 
+  const fieldId = store.fieldIdCounter + 1
+  layer.on('click', () => useAppStore.getState().openFieldDetail(fieldId))
+
   const area = calcArea(latlngs) / 10000
   const perimeter = calcPerimeter(rawLatLngs)
 
@@ -232,7 +235,7 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
   }).addTo(map)
 
   const field: Field = {
-    id: store.fieldIdCounter + 1,
+    id: fieldId,
     name,
     color,
     latlngs,
@@ -328,6 +331,8 @@ function restorePersistedData(map: L.Map) {
       const layer = L.polygon(leafletLatLngs, {
         color: sf.color, weight: 2, fillColor: sf.color, fillOpacity: 0.15,
       }).addTo(map)
+
+      layer.on('click', () => useAppStore.getState().openFieldDetail(sf.id))
 
       const center = layer.getBounds().getCenter()
       const labelMarker = L.marker(center, {

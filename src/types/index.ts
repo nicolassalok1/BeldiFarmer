@@ -108,6 +108,7 @@ export type DrawTarget = 'exploit' | 'field' | null
 export type GenerationMethod = 'grid' | 'zigzag' | 'random'
 
 export type DashboardTab = 'overview' | 'cultures' | 'personnel' | 'watering' | 'amendments' | 'soil' | 'relief'
+export type FieldDetailTab = 'info' | 'culture' | 'personnel' | 'watering' | 'amendments' | 'soil' | 'relief'
 
 export interface AppState {
   // Exploitation
@@ -151,6 +152,8 @@ export interface AppState {
   helpOpen: boolean
   dashboardOpen: boolean
   dashboardTab: DashboardTab
+  fieldDetailOpen: boolean
+  fieldDetailTab: FieldDetailTab
 
   // ── Actions ──
 
@@ -199,5 +202,8 @@ export interface AppState {
   setHelpOpen: (open: boolean) => void
   setDashboardOpen: (open: boolean) => void
   setDashboardTab: (tab: DashboardTab) => void
+  openFieldDetail: (fieldId: number, tab?: FieldDetailTab) => void
+  closeFieldDetail: () => void
+  setFieldDetailTab: (tab: FieldDetailTab) => void
   clearAll: () => void
 }

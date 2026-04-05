@@ -135,6 +135,10 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
       </div>
       <FieldMeta field={f} employees={employees} />
       <div className="flex gap-1 mt-1.5">
+        <button className="btn-sm btn-cyan"
+          onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>
+          ◈ Détails
+        </button>
         <button className="btn-sm btn-amber"
           onClick={(e) => { e.stopPropagation(); document.getElementById('btn-generate-' + f.id)?.click() }}
           id={`btn-regen-${f.id}`}>
@@ -142,11 +146,11 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
         </button>
         <button className="btn-sm btn-active"
           onClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}>
-          ✎ Renommer
+          ✎
         </button>
         <button className="btn-sm btn-danger"
           onClick={(e) => { e.stopPropagation(); handleDelete() }}>
-          ✕ Supprimer
+          ✕
         </button>
       </div>
     </div>

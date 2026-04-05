@@ -42,6 +42,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   soilAnalyses: [], soilAnalysisIdCounter: 0,
   currentStep: 1, toastMessage: null, toastError: false,
   statusText: 'EN ATTENTE', helpOpen: false, dashboardOpen: false, dashboardTab: 'overview',
+  fieldDetailOpen: false, fieldDetailTab: 'info',
 
   // ── Exploitation ──
   setExploitation: (polygon, area, layer, label) => {
@@ -143,6 +144,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setHelpOpen: (open) => set({ helpOpen: open }),
   setDashboardOpen: (open) => set({ dashboardOpen: open }),
   setDashboardTab: (tab) => set({ dashboardTab: tab }),
+  openFieldDetail: (fieldId, tab = 'info') => set({ selectedFieldId: fieldId, fieldDetailOpen: true, fieldDetailTab: tab }),
+  closeFieldDetail: () => set({ fieldDetailOpen: false }),
+  setFieldDetailTab: (tab) => set({ fieldDetailTab: tab }),
   clearAll: () => {
     set((s) => ({
       exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,

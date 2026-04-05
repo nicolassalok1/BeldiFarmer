@@ -4,6 +4,7 @@ import { MapView } from './components/MapView'
 import { Toast } from './components/Toast'
 import { HelpModal } from './components/HelpModal'
 import { Dashboard } from './components/Dashboard'
+import { FieldDetailPanel } from './components/FieldDetailPanel'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Toast />
       <HelpModal />
       <Dashboard />
+      <FieldDetailPanel />
     </div>
   )
 }
