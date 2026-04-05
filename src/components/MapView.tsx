@@ -22,7 +22,7 @@ export function MapView() {
 
     const map = L.map(containerRef.current, {
       center: [34.9615, -4.6181],
-      zoom: 14,
+      zoom: 17,
       zoomControl: true,
     })
 
