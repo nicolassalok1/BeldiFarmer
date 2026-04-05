@@ -24,23 +24,32 @@ export function MapView() {
     const map = L.map(containerRef.current, {
       center: [34.9615, -4.6181],
       zoom: 17,
+      maxZoom: 22,
       zoomControl: true,
     })
 
     const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: '© Esri',
       maxZoom: 19,
+      maxNativeZoom: 19,
+    })
+
+    const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      attribution: '© Google',
+      maxZoom: 22,
+      maxNativeZoom: 22,
     })
 
     const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '© CartoDB',
-      maxZoom: 20,
+      maxZoom: 22,
+      maxNativeZoom: 20,
     })
 
-    satellite.addTo(map)
+    googleSat.addTo(map)
 
     L.control.layers(
-      { 'Satellite': satellite, 'Sombre': dark },
+      { 'Google Satellite': googleSat, 'Esri Satellite': satellite, 'Sombre': dark },
       {},
       { position: 'topright', collapsed: false }
     ).addTo(map)
