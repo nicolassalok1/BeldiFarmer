@@ -1,4 +1,5 @@
 import type { Field, LatLng } from '../types'
+import type { PersistedData } from './persistence'
 
 interface ExportPoint {
   field: string
@@ -92,4 +93,41 @@ export function exportKML(fields: Field[]): number {
     'application/vnd.google-earth.kml+xml'
   )
   return total
+}
+
+// ── Export/Import projet complet ──
+
+export function exportProject(fields: Field[], exploitPolygon: LatLng[] | null, exploitArea: number, fieldIdCounter: number, generationMethod: string, density: number): boolean {
+  const data: PersistedData = {
+    exploitPolygon,
+    exploitArea,
+    fields: fields.map((f) => ({
+      id: f.id,
+      name: f.name,
+      color: f.color,
+      latlngs: f.latlngs,
+      area: f.area,
+      perimeter: f.perimeter,
+      points: f.points,
+    })),
+    fieldIdCounter,
+    generationMethod,
+    density,
+  }
+
+  if (!data.exploitPolygon && data.fields.length === 0) return false
+
+  const date = new Date().toISOString().slice(0, 10)
+  download(`projet-anrac-${date}.json`, JSON.stringify(data, null, 2), 'application/json')
+  return true
+}
+
+export function parseProjectFile(content: string): PersistedData | null {
+  try {
+    const data = JSON.parse(content) as PersistedData
+    if (!data.exploitPolygon && (!data.fields || data.fields.length === 0)) return null
+    return data
+  } catch {
+    return null
+  }
 }

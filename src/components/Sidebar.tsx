@@ -1,7 +1,8 @@
 import { useAppStore } from '../store/useAppStore'
 import { StepIndicator } from './StepIndicator'
 import { FieldList } from './FieldList'
-import { exportCSV, exportGeoJSON, exportKML } from '../utils/exporters'
+import { exportCSV, exportGeoJSON, exportKML, exportProject, parseProjectFile } from '../utils/exporters'
+import { saveToStorage } from '../utils/persistence'
 import type { GenerationMethod } from '../types'
 
 export function Sidebar() {
@@ -158,11 +159,73 @@ export function Sidebar() {
 
       {/* Export */}
       <Section>
-        <SectionTitle>Export</SectionTitle>
+        <SectionTitle>Export données</SectionTitle>
         <div className="flex gap-1.5">
           <button className="btn-amber flex-1" onClick={() => handleExport('csv')}>↓ CSV</button>
           <button className="btn-amber flex-1" onClick={() => handleExport('geojson')}>↓ GeoJSON</button>
           <button className="btn-amber flex-1" onClick={() => handleExport('kml')}>↓ KML</button>
+        </div>
+      </Section>
+
+      {/* Save / Load project */}
+      <Section>
+        <SectionTitle>Sauvegarder / Charger</SectionTitle>
+        <div className="flex gap-1.5">
+          <button
+            className="btn-cyan flex-1"
+            onClick={() => {
+              const ok = exportProject(
+                store.fields,
+                store.exploitPolygon,
+                store.exploitArea,
+                store.fieldIdCounter,
+                store.generationMethod,
+                store.density,
+              )
+              if (ok) store.toast('✓ Projet exporté en JSON')
+              else store.toast('⚠ Rien à exporter', true)
+            }}
+          >
+            ↓ Sauvegarder
+          </button>
+          <button
+            className="btn-active flex-1"
+            onClick={() => {
+              const input = document.createElement('input')
+              input.type = 'file'
+              input.accept = '.json'
+              input.onchange = () => {
+                const file = input.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = () => {
+                  const data = parseProjectFile(reader.result as string)
+                  if (!data) {
+                    store.toast('⚠ Fichier invalide', true)
+                    return
+                  }
+                  // Clear current state on map
+                  if (store.exploitLayer) {
+                    store.exploitLayer.remove()
+                    store.exploitLabel?.remove()
+                  }
+                  store.fields.forEach((f) => {
+                    f.layer?.remove()
+                    f.labelMarker?.remove()
+                    f.pointMarkers.forEach((m) => m.remove())
+                  })
+                  store.clearAll()
+                  // Save to localStorage then reload to restore via MapView
+                  saveToStorage(data)
+                  window.location.reload()
+                }
+                reader.readAsText(file)
+              }
+              input.click()
+            }}
+          >
+            ↑ Charger
+          </button>
         </div>
         <button
           className="btn-full btn-danger mt-1.5"
