@@ -1,6 +1,6 @@
-import type { LatLng, SamplingPoint, CultureInfo, Employee } from '../types'
+import type { LatLng, SamplingPoint, CultureInfo, Employee, WateringEntry, AmendmentEntry, SoilAnalysis, ReliefInfo } from '../types'
 
-const STORAGE_KEY = 'anrac-prelevements'
+const STORAGE_KEY = 'anrac-prelevements-v2'
 
 export interface PersistedField {
   id: number
@@ -13,6 +13,7 @@ export interface PersistedField {
   culture?: CultureInfo
   assignedEmployees: number[]
   assignedManager: number | null
+  relief?: ReliefInfo
 }
 
 export interface PersistedData {
@@ -25,14 +26,18 @@ export interface PersistedData {
   employees: Employee[]
   employeeIdCounter: number
   strains: string[]
+  wateringLog: WateringEntry[]
+  wateringIdCounter: number
+  amendmentLog: AmendmentEntry[]
+  amendmentIdCounter: number
+  soilAnalyses: SoilAnalysis[]
+  soilAnalysisIdCounter: number
 }
 
 export function saveToStorage(data: PersistedData): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  } catch {
-    // Storage full or unavailable
-  }
+  } catch { /* full */ }
 }
 
 export function loadFromStorage(): PersistedData | null {
@@ -40,13 +45,19 @@ export function loadFromStorage(): PersistedData | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const data = JSON.parse(raw) as PersistedData
-    // Backwards compat defaults
-    if (!data.employees) data.employees = []
-    if (!data.employeeIdCounter) data.employeeIdCounter = 0
-    if (!data.strains) data.strains = []
+    // Backwards compat
+    data.employees ??= []
+    data.employeeIdCounter ??= 0
+    data.strains ??= []
+    data.wateringLog ??= []
+    data.wateringIdCounter ??= 0
+    data.amendmentLog ??= []
+    data.amendmentIdCounter ??= 0
+    data.soilAnalyses ??= []
+    data.soilAnalysisIdCounter ??= 0
     data.fields?.forEach((f) => {
-      if (!f.assignedEmployees) f.assignedEmployees = []
-      if (f.assignedManager === undefined) f.assignedManager = null
+      f.assignedEmployees ??= []
+      f.assignedManager ??= null
     })
     return data
   } catch {

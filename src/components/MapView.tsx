@@ -364,13 +364,18 @@ function restorePersistedData(map: L.Map) {
     }
   }
 
-  // Restore employees and strains
-  if (saved.employees?.length) {
-    useAppStore.setState({ employees: saved.employees, employeeIdCounter: saved.employeeIdCounter || 0 })
-  }
-  if (saved.strains?.length) {
-    useAppStore.setState({ strains: saved.strains })
-  }
+  // Restore employees, strains, logs
+  useAppStore.setState({
+    employees: saved.employees || [],
+    employeeIdCounter: saved.employeeIdCounter || 0,
+    strains: saved.strains || [],
+    wateringLog: saved.wateringLog || [],
+    wateringIdCounter: saved.wateringIdCounter || 0,
+    amendmentLog: saved.amendmentLog || [],
+    amendmentIdCounter: saved.amendmentIdCounter || 0,
+    soilAnalyses: saved.soilAnalyses || [],
+    soilAnalysisIdCounter: saved.soilAnalysisIdCounter || 0,
+  })
 
   store.setStatus(saved.exploitPolygon ? (saved.fields.length > 0 ? 'DONNÉES RESTAURÉES' : 'AJOUTEZ VOS CHAMPS') : 'EN ATTENTE')
 }

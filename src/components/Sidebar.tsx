@@ -200,17 +200,16 @@ export function Sidebar() {
           <button
             className="btn-cyan flex-1"
             onClick={() => {
-              const ok = exportProject(
-                store.fields,
-                store.exploitPolygon,
-                store.exploitArea,
-                store.fieldIdCounter,
-                store.generationMethod,
-                store.density,
-                store.employees,
-                store.employeeIdCounter,
-                store.strains,
-              )
+              const ok = exportProject({
+                fields: store.fields, exploitPolygon: store.exploitPolygon,
+                exploitArea: store.exploitArea, fieldIdCounter: store.fieldIdCounter,
+                generationMethod: store.generationMethod, density: store.density,
+                employees: store.employees, employeeIdCounter: store.employeeIdCounter,
+                strains: store.strains, wateringLog: store.wateringLog,
+                wateringIdCounter: store.wateringIdCounter, amendmentLog: store.amendmentLog,
+                amendmentIdCounter: store.amendmentIdCounter, soilAnalyses: store.soilAnalyses,
+                soilAnalysisIdCounter: store.soilAnalysisIdCounter,
+              })
               if (ok) store.toast('✓ Projet exporté en JSON')
               else store.toast('⚠ Rien à exporter', true)
             }}

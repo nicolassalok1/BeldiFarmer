@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import type { Employee, SeedType } from '../types'
+import type { Employee, SeedType, DashboardTab, IrrigationMethod, AmendmentType, Exposition } from '../types'
+
+const NAV_ITEMS: { key: DashboardTab; icon: string; label: string }[] = [
+  { key: 'overview', icon: '◈', label: 'Vue d\'ensemble' },
+  { key: 'cultures', icon: '❋', label: 'Cultures' },
+  { key: 'personnel', icon: '◉', label: 'Personnel' },
+  { key: 'watering', icon: '◇', label: 'Arrosage' },
+  { key: 'amendments', icon: '▣', label: 'Amendements' },
+  { key: 'soil', icon: '◬', label: 'Analyse sols' },
+  { key: 'relief', icon: '▲', label: 'Relief' },
+]
 
 export function Dashboard() {
   const open = useAppStore((s) => s.dashboardOpen)
@@ -11,47 +21,36 @@ export function Dashboard() {
   if (!open) return null
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center"
-      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
-    >
-      <div className="bg-panel border border-border w-[90vw] max-w-[700px] max-h-[85vh] flex flex-col relative">
-        {/* Header */}
-        <div className="flex items-center border-b border-border px-5 py-3">
-          <h2 className="font-mono text-sm text-olive-lit tracking-[2px] flex-1">DASHBOARD</h2>
-          <button
-            onClick={() => setOpen(false)}
-            className="bg-transparent border-none text-muted text-xl cursor-pointer hover:text-red transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-border">
-          {([
-            ['params', 'Paramètres'],
-            ['personnel', 'Personnel'],
-            ['cultures', 'Cultures'],
-          ] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-[1px] border-b-2 transition-all cursor-pointer bg-transparent border-x-0 border-t-0
-                ${tab === key
-                  ? 'border-olive-lit text-olive-lit'
-                  : 'border-transparent text-muted hover:text-text'}`}
-            >
-              {label}
+    <div className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center"
+      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
+      <div className="bg-panel border border-border w-[92vw] max-w-[900px] h-[85vh] flex relative">
+        {/* Sidebar nav */}
+        <nav className="w-[180px] border-r border-border flex flex-col bg-bg shrink-0">
+          <div className="px-4 py-4 border-b border-border">
+            <div className="font-mono text-[10px] text-olive-lit tracking-[2px]">DASHBOARD</div>
+            <div className="font-mono text-[9px] text-muted mt-1">v2.0</div>
+          </div>
+          {NAV_ITEMS.map((item) => (
+            <button key={item.key} onClick={() => setTab(item.key)}
+              className={`text-left px-4 py-2.5 text-xs font-semibold tracking-[.5px] border-l-2 transition-all cursor-pointer bg-transparent border-y-0 border-r-0
+                ${tab === item.key ? 'border-l-olive-lit text-olive-lit bg-olive/10' : 'border-l-transparent text-muted hover:text-text hover:bg-panel'}`}>
+              <span className="mr-2 opacity-60">{item.icon}</span>{item.label}
             </button>
           ))}
-        </div>
+          <div className="mt-auto p-3 border-t border-border">
+            <button onClick={() => setOpen(false)} className="btn-danger w-full text-[10px] py-1.5">Fermer</button>
+          </div>
+        </nav>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5">
-          {tab === 'params' && <ParamsTab />}
-          {tab === 'personnel' && <PersonnelTab />}
+        <div className="flex-1 overflow-y-auto p-6">
+          {tab === 'overview' && <OverviewTab />}
           {tab === 'cultures' && <CulturesTab />}
+          {tab === 'personnel' && <PersonnelTab />}
+          {tab === 'watering' && <WateringTab />}
+          {tab === 'amendments' && <AmendmentsTab />}
+          {tab === 'soil' && <SoilTab />}
+          {tab === 'relief' && <ReliefTab />}
         </div>
       </div>
     </div>
@@ -59,188 +58,99 @@ export function Dashboard() {
 }
 
 // ═══════════════════════════════════════
-//  PARAMÈTRES
+//  SHARED
 // ═══════════════════════════════════════
 
-function ParamsTab() {
+function TabHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-6">
+      <h2 className="font-mono text-sm text-olive-lit tracking-[2px] uppercase">{title}</h2>
+      <p className="text-xs text-muted mt-1">{subtitle}</p>
+    </div>
+  )
+}
+
+function FieldSelector({ value, onChange, label = 'Champ' }: { value: number; onChange: (id: number) => void; label?: string }) {
+  const fields = useAppStore((s) => s.fields)
+  return (
+    <div className="flex items-center gap-2">
+      <label className="text-[10px] text-muted uppercase tracking-[.5px] min-w-[50px]">{label}</label>
+      <select value={value} onChange={(e) => onChange(parseInt(e.target.value))}
+        className="flex-1 font-mono text-xs bg-bg border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
+        <option value={0}>— Tous les champs —</option>
+        {fields.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+      </select>
+    </div>
+  )
+}
+
+function EmptyState({ text }: { text: string }) {
+  return <div className="text-center text-muted text-xs py-8 leading-relaxed">{text}</div>
+}
+
+// ═══════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════
+
+function OverviewTab() {
   const store = useAppStore()
+  const totalPts = store.fields.reduce((s, f) => s + f.points.length, 0)
 
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="block font-mono text-[10px] text-olive-lit tracking-[2px] mb-2 uppercase">Méthode de génération</label>
-        <select
-          value={store.generationMethod}
-          onChange={(e) => store.setGenerationMethod(e.target.value as any)}
-          className="w-full font-mono text-xs bg-bg border border-border text-text py-2 px-3 outline-none focus:border-olive-lit"
-        >
-          <option value="grid">Grille régulière</option>
-          <option value="zigzag">Zigzag (W)</option>
-          <option value="random">Aléatoire stratifié</option>
-        </select>
+    <>
+      <TabHeader title="Vue d'ensemble" subtitle="Résumé de l'exploitation et de l'activité récente" />
+
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        <OverviewCard label="Surface" value={store.exploitArea > 0 ? store.exploitArea.toFixed(1) : '—'} unit="ha" color="text-cyan" />
+        <OverviewCard label="Champs" value={String(store.fields.length)} unit="parcelles" color="text-olive-lit" />
+        <OverviewCard label="Points" value={String(totalPts)} unit="prélèvements" color="text-amber" />
+        <OverviewCard label="Personnel" value={String(store.employees.length)} unit="personnes" color="text-text" />
       </div>
 
-      <div>
-        <label className="block font-mono text-[10px] text-olive-lit tracking-[2px] mb-2 uppercase">Densité (pts/ha)</label>
-        <input
-          type="number"
-          value={store.density}
-          min={0.5}
-          max={20}
-          step={0.5}
-          onChange={(e) => store.setDensity(parseFloat(e.target.value) || 1)}
-          className="w-full font-mono text-xs bg-bg border border-border text-text py-2 px-3 outline-none focus:border-olive-lit"
-        />
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <OverviewCard label="Arrosages" value={String(store.wateringLog.length)} unit="entrées" color="text-cyan" />
+        <OverviewCard label="Amendements" value={String(store.amendmentLog.length)} unit="entrées" color="text-olive-lit" />
+        <OverviewCard label="Analyses sol" value={String(store.soilAnalyses.length)} unit="analyses" color="text-amber" />
       </div>
 
-      <div className="border-t border-border pt-4">
-        <label className="block font-mono text-[10px] text-olive-lit tracking-[2px] mb-2 uppercase">Résumé exploitation</label>
-        <div className="font-mono text-xs text-muted space-y-1">
-          <div>Surface exploitation : <span className="text-cyan">{store.exploitArea > 0 ? store.exploitArea.toFixed(2) + ' ha' : '—'}</span></div>
-          <div>Nombre de champs : <span className="text-text">{store.fields.length}</span></div>
-          <div>Total points : <span className="text-amber">{store.fields.reduce((s, f) => s + f.points.length, 0)}</span></div>
-          <div>Employés enregistrés : <span className="text-text">{store.employees.length}</span></div>
-        </div>
+      {/* Recent activity */}
+      <div className="border border-border p-4">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3">Activité récente</div>
+        {(() => {
+          type ActivityItem = { date: string; text: string }
+          const items: ActivityItem[] = []
+          store.wateringLog.slice(-5).forEach((w) => {
+            const f = store.fields.find((f) => f.id === w.fieldId)
+            items.push({ date: w.date, text: `Arrosage ${f?.name || '?'} — ${w.durationMin} min` })
+          })
+          store.amendmentLog.slice(-5).forEach((a) => {
+            const f = store.fields.find((f) => f.id === a.fieldId)
+            items.push({ date: a.date, text: `${a.product} sur ${f?.name || '?'} — ${a.quantityKg} kg` })
+          })
+          store.soilAnalyses.slice(-3).forEach((s) => {
+            const f = store.fields.find((f) => f.id === s.fieldId)
+            items.push({ date: s.date, text: `Analyse sol ${f?.name || '?'} — pH ${s.ph}` })
+          })
+          items.sort((a, b) => b.date.localeCompare(a.date))
+          if (!items.length) return <EmptyState text="Aucune activité enregistrée." />
+          return items.slice(0, 8).map((item, i) => (
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-b-0">
+              <span className="font-mono text-[10px] text-muted min-w-[72px]">{item.date}</span>
+              <span className="text-xs text-text">{item.text}</span>
+            </div>
+          ))
+        })()}
       </div>
-    </div>
+    </>
   )
 }
 
-// ═══════════════════════════════════════
-//  PERSONNEL
-// ═══════════════════════════════════════
-
-function PersonnelTab() {
-  const employees = useAppStore((s) => s.employees)
-  const addEmployee = useAppStore((s) => s.addEmployee)
-  const updateEmployee = useAppStore((s) => s.updateEmployee)
-  const removeEmployee = useAppStore((s) => s.removeEmployee)
-  const toast = useAppStore((s) => s.toast)
-
-  const [name, setName] = useState('')
-  const [role, setRole] = useState<Employee['role']>('employe')
-  const [phone, setPhone] = useState('')
-  const [editId, setEditId] = useState<number | null>(null)
-
-  const handleAdd = () => {
-    if (!name.trim()) return
-    if (editId !== null) {
-      updateEmployee(editId, { name: name.trim(), role, phone: phone.trim() || undefined })
-      toast(`✓ ${name.trim()} mis à jour`)
-      setEditId(null)
-    } else {
-      addEmployee({ name: name.trim(), role, phone: phone.trim() || undefined })
-      toast(`✓ ${name.trim()} ajouté`)
-    }
-    setName('')
-    setPhone('')
-    setRole('employe')
-  }
-
-  const startEdit = (emp: Employee) => {
-    setEditId(emp.id)
-    setName(emp.name)
-    setRole(emp.role)
-    setPhone(emp.phone || '')
-  }
-
-  const managers = employees.filter((e) => e.role === 'responsable')
-  const workers = employees.filter((e) => e.role === 'employe')
-
+function OverviewCard({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {
   return (
-    <div className="space-y-4">
-      {/* Add form */}
-      <div className="bg-bg border border-border p-3 space-y-2">
-        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-1">
-          {editId ? 'Modifier' : 'Ajouter'}
-        </div>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nom complet"
-          className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted"
-        />
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Téléphone (optionnel)"
-            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted"
-          />
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as Employee['role'])}
-            className="font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit"
-          >
-            <option value="employe">Employé</option>
-            <option value="responsable">Responsable</option>
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn-active flex-1" onClick={handleAdd}>
-            {editId ? '✓ Mettre à jour' : '+ Ajouter'}
-          </button>
-          {editId && (
-            <button className="btn-danger" onClick={() => { setEditId(null); setName(''); setPhone(''); setRole('employe') }}>
-              Annuler
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Responsables */}
-      {managers.length > 0 && (
-        <div>
-          <div className="font-mono text-[10px] text-amber tracking-[2px] uppercase mb-2">Responsables ({managers.length})</div>
-          {managers.map((emp) => (
-            <EmployeeRow key={emp.id} emp={emp} onEdit={startEdit} onDelete={removeEmployee} />
-          ))}
-        </div>
-      )}
-
-      {/* Employés */}
-      {workers.length > 0 && (
-        <div>
-          <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-2">Employés ({workers.length})</div>
-          {workers.map((emp) => (
-            <EmployeeRow key={emp.id} emp={emp} onEdit={startEdit} onDelete={removeEmployee} />
-          ))}
-        </div>
-      )}
-
-      {employees.length === 0 && (
-        <div className="text-center text-muted text-xs py-6">
-          Aucun personnel enregistré.<br />Ajoutez des employés et responsables.
-        </div>
-      )}
-    </div>
-  )
-}
-
-function EmployeeRow({ emp, onEdit, onDelete }: {
-  emp: Employee
-  onEdit: (emp: Employee) => void
-  onDelete: (id: number) => void
-}) {
-  return (
-    <div className="flex items-center gap-2 py-1.5 px-2 border-b border-border/50 hover:bg-olive/5 transition-colors">
-      <div className={`w-2 h-2 rounded-full shrink-0 ${emp.role === 'responsable' ? 'bg-amber' : 'bg-olive-lit'}`} />
-      <span className="font-mono text-xs text-text flex-1">{emp.name}</span>
-      {emp.phone && <span className="font-mono text-[10px] text-muted">{emp.phone}</span>}
-      <button
-        onClick={() => onEdit(emp)}
-        className="text-muted text-[10px] bg-transparent border-none cursor-pointer hover:text-olive-lit transition-colors"
-      >
-        ✎
-      </button>
-      <button
-        onClick={() => onDelete(emp.id)}
-        className="text-muted text-xs bg-transparent border-none cursor-pointer hover:text-red transition-colors"
-      >
-        ✕
-      </button>
+    <div className="bg-bg border border-border p-3">
+      <div className="text-[9px] text-muted tracking-[1px] uppercase">{label}</div>
+      <div className={`font-mono text-xl mt-1 ${color}`}>{value}</div>
+      <div className="text-[9px] text-muted">{unit}</div>
     </div>
   )
 }
@@ -253,167 +163,561 @@ function CulturesTab() {
   const store = useAppStore()
   const [newStrain, setNewStrain] = useState('')
 
-  const handleAddStrain = () => {
-    if (!newStrain.trim()) return
-    store.addStrain(newStrain.trim())
-    store.toast(`✓ Strain "${newStrain.trim()}" ajoutée`)
-    setNewStrain('')
-  }
-
   return (
-    <div className="space-y-5">
-      {/* Strain catalog */}
-      <div>
+    <>
+      <TabHeader title="Cultures" subtitle="Type de graine et strains par champ" />
+
+      <div className="mb-6">
         <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-2">Catalogue strains Cali</div>
-        <p className="text-[11px] text-muted mb-3 leading-relaxed">
-          Gérez ici la liste des strains disponibles pour les champs de type Cali.
-        </p>
         <div className="flex gap-2 mb-3">
-          <input
-            type="text"
-            value={newStrain}
-            onChange={(e) => setNewStrain(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddStrain()}
+          <input type="text" value={newStrain} onChange={(e) => setNewStrain(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && newStrain.trim() && (store.addStrain(newStrain.trim()), setNewStrain(''))}
             placeholder="Nom de la strain (ex: OG Kush)"
-            className="flex-1 font-mono text-xs bg-bg border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted"
-          />
-          <button className="btn-active" onClick={handleAddStrain}>+</button>
+            className="flex-1 font-mono text-xs bg-bg border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <button className="btn-active" onClick={() => { if (newStrain.trim()) { store.addStrain(newStrain.trim()); store.toast(`✓ "${newStrain.trim()}" ajoutée`); setNewStrain('') } }}>+</button>
         </div>
         {store.strains.length > 0 ? (
-          <div className="space-y-0">
-            {store.strains.map((strain) => (
-              <div key={strain} className="flex items-center gap-2 py-1.5 px-2 border-b border-border/50">
-                <span className="font-mono text-xs text-text flex-1">{strain}</span>
-                <button
-                  onClick={() => store.removeStrain(strain)}
-                  className="text-muted text-xs bg-transparent border-none cursor-pointer hover:text-red transition-colors"
-                >
-                  ✕
-                </button>
+          <div className="flex flex-wrap gap-1.5">
+            {store.strains.map((s) => (
+              <span key={s} className="font-mono text-[11px] bg-bg border border-border px-2 py-1 text-text flex items-center gap-2">
+                {s}
+                <button onClick={() => store.removeStrain(s)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button>
+              </span>
+            ))}
+          </div>
+        ) : <EmptyState text="Ajoutez des strains pour les champs Cali." />}
+      </div>
+
+      <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3">Configuration par champ</div>
+      {store.fields.length > 0 ? (
+        <div className="space-y-2">
+          {store.fields.map((f) => {
+            const seedType = f.culture?.seedType || 'beldia'
+            const strain = f.culture?.strain || ''
+            return (
+              <div key={f.id} className="bg-bg border border-border p-3 flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: f.color }} />
+                <span className="font-mono text-xs text-text font-bold min-w-[80px]">{f.name}</span>
+                <select value={seedType}
+                  onChange={(e) => { const t = e.target.value as SeedType; store.updateField(f.id, { culture: { seedType: t, strain: t === 'beldia' ? '' : strain } }) }}
+                  className="font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit">
+                  <option value="beldia">Beldia</option>
+                  <option value="cali">Cali</option>
+                </select>
+                {seedType === 'cali' && (
+                  <select value={strain}
+                    onChange={(e) => store.updateField(f.id, { culture: { seedType: 'cali', strain: e.target.value } })}
+                    className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit">
+                    <option value="">— Strain —</option>
+                    {store.strains.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : <EmptyState text="Aucun champ défini." />}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════
+//  PERSONNEL
+// ═══════════════════════════════════════
+
+function PersonnelTab() {
+  const store = useAppStore()
+  const [name, setName] = useState(''); const [role, setRole] = useState<Employee['role']>('employe'); const [phone, setPhone] = useState(''); const [editId, setEditId] = useState<number | null>(null)
+
+  const handleSubmit = () => {
+    if (!name.trim()) return
+    if (editId !== null) { store.updateEmployee(editId, { name: name.trim(), role, phone: phone.trim() || undefined }); store.toast(`✓ ${name.trim()} mis à jour`); setEditId(null) }
+    else { store.addEmployee({ name: name.trim(), role, phone: phone.trim() || undefined }); store.toast(`✓ ${name.trim()} ajouté`) }
+    setName(''); setPhone(''); setRole('employe')
+  }
+
+  const managers = store.employees.filter((e) => e.role === 'responsable')
+  const workers = store.employees.filter((e) => e.role === 'employe')
+
+  return (
+    <>
+      <TabHeader title="Personnel" subtitle="Gérer les employés et responsables, les assigner aux champs" />
+
+      {/* Add form */}
+      <div className="bg-bg border border-border p-4 mb-5">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-2">{editId ? 'Modifier' : 'Ajouter'}</div>
+        <div className="flex gap-2 mb-2">
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom complet"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <select value={role} onChange={(e) => setRole(e.target.value as Employee['role'])}
+            className="font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit">
+            <option value="employe">Employé</option>
+            <option value="responsable">Responsable</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Téléphone (optionnel)"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <button className="btn-active" onClick={handleSubmit}>{editId ? '✓ Sauver' : '+ Ajouter'}</button>
+          {editId && <button className="btn-danger" onClick={() => { setEditId(null); setName(''); setPhone('') }}>Annuler</button>}
+        </div>
+      </div>
+
+      {/* Lists */}
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <div className="font-mono text-[10px] text-amber tracking-[2px] uppercase mb-2">Responsables ({managers.length})</div>
+          {managers.map((emp) => (
+            <EmpRow key={emp.id} emp={emp} onEdit={(e) => { setEditId(e.id); setName(e.name); setRole(e.role); setPhone(e.phone || '') }} onDel={(id) => store.removeEmployee(id)} />
+          ))}
+          {!managers.length && <EmptyState text="Aucun responsable." />}
+        </div>
+        <div>
+          <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-2">Employés ({workers.length})</div>
+          {workers.map((emp) => (
+            <EmpRow key={emp.id} emp={emp} onEdit={(e) => { setEditId(e.id); setName(e.name); setRole(e.role); setPhone(e.phone || '') }} onDel={(id) => store.removeEmployee(id)} />
+          ))}
+          {!workers.length && <EmptyState text="Aucun employé." />}
+        </div>
+      </div>
+
+      {/* Assignment */}
+      {store.fields.length > 0 && store.employees.length > 0 && (
+        <>
+          <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3 border-t border-border pt-4">Assignation par champ</div>
+          <div className="space-y-2">
+            {store.fields.map((f) => (
+              <div key={f.id} className="bg-bg border border-border p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: f.color }} />
+                  <span className="font-mono text-xs text-text font-bold flex-1">{f.name}</span>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <label className="text-[10px] text-muted min-w-[70px] pt-1">Resp.</label>
+                  <select value={f.assignedManager || ''} onChange={(e) => store.updateField(f.id, { assignedManager: e.target.value ? parseInt(e.target.value) : null })}
+                    className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit">
+                    <option value="">— Aucun —</option>
+                    {managers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+                {workers.length > 0 && (
+                  <div className="flex gap-1 flex-wrap">
+                    {workers.map((w) => {
+                      const on = f.assignedEmployees.includes(w.id)
+                      return <button key={w.id} onClick={() => store.updateField(f.id, { assignedEmployees: on ? f.assignedEmployees.filter((x) => x !== w.id) : [...f.assignedEmployees, w.id] })}
+                        className={`font-mono text-[10px] px-2 py-0.5 border cursor-pointer transition-all ${on ? 'bg-olive border-olive-lit text-white' : 'bg-transparent border-border text-muted hover:border-olive hover:text-olive-lit'}`}>{w.name}</button>
+                    })}
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center text-muted text-xs py-4">
-            Aucune strain enregistrée.
-          </div>
-        )}
-      </div>
+        </>
+      )}
+    </>
+  )
+}
 
-      {/* Field culture + personnel assignments */}
-      <div className="border-t border-border pt-4">
-        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-2">Configuration par champ</div>
-        {store.fields.length > 0 ? (
-          <div className="space-y-3">
-            {store.fields.map((f) => (
-              <FieldConfigRow key={f.id} field={f} strains={store.strains} employees={store.employees} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-muted text-xs py-4">
-            Aucun champ défini.
-          </div>
-        )}
-      </div>
+function EmpRow({ emp, onEdit, onDel }: { emp: Employee; onEdit: (e: Employee) => void; onDel: (id: number) => void }) {
+  return (
+    <div className="flex items-center gap-2 py-1.5 px-2 border-b border-border/50 hover:bg-olive/5 transition-colors">
+      <div className={`w-2 h-2 rounded-full shrink-0 ${emp.role === 'responsable' ? 'bg-amber' : 'bg-olive-lit'}`} />
+      <span className="font-mono text-xs text-text flex-1">{emp.name}</span>
+      {emp.phone && <span className="font-mono text-[10px] text-muted">{emp.phone}</span>}
+      <button onClick={() => onEdit(emp)} className="text-muted text-[10px] bg-transparent border-none cursor-pointer hover:text-olive-lit">✎</button>
+      <button onClick={() => onDel(emp.id)} className="text-muted text-xs bg-transparent border-none cursor-pointer hover:text-red">✕</button>
     </div>
   )
 }
 
-function FieldConfigRow({ field, strains, employees }: {
-  field: { id: number; name: string; color: string; area: number; culture?: { seedType: SeedType; strain: string }; assignedManager: number | null; assignedEmployees: number[] }
-  strains: string[]
-  employees: Employee[]
-}) {
-  const updateField = useAppStore((s) => s.updateField)
-  const seedType = field.culture?.seedType || 'beldia'
-  const strain = field.culture?.strain || ''
-  const managers = employees.filter((e) => e.role === 'responsable')
-  const workers = employees.filter((e) => e.role === 'employe')
+// ═══════════════════════════════════════
+//  ARROSAGE
+// ═══════════════════════════════════════
 
-  const toggleEmployee = (empId: number) => {
-    const current = field.assignedEmployees
-    const updated = current.includes(empId)
-      ? current.filter((id) => id !== empId)
-      : [...current, empId]
-    updateField(field.id, { assignedEmployees: updated })
+const IRRIGATION_LABELS: Record<IrrigationMethod, string> = { goutte_a_goutte: 'Goutte à goutte', aspersion: 'Aspersion', gravitaire: 'Gravitaire', manuel: 'Manuel' }
+
+function WateringTab() {
+  const store = useAppStore()
+  const [fieldId, setFieldId] = useState(store.fields[0]?.id || 0)
+  const [filterField, setFilterField] = useState(0)
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [method, setMethod] = useState<IrrigationMethod>('goutte_a_goutte')
+  const [duration, setDuration] = useState(30)
+  const [volume, setVolume] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const handleAdd = () => {
+    if (!fieldId) { store.toast('⚠ Sélectionnez un champ', true); return }
+    store.addWatering({ date, fieldId, method, durationMin: duration, volumeL: volume ? parseFloat(volume) : undefined, notes: notes || undefined })
+    store.toast('✓ Arrosage enregistré')
+    setNotes(''); setVolume('')
   }
 
+  const filtered = filterField ? store.wateringLog.filter((w) => w.fieldId === filterField) : store.wateringLog
+  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date))
+
   return (
-    <div className="bg-bg border border-border p-3">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-2.5 h-2.5 rounded-full" style={{ background: field.color }} />
-        <span className="font-mono text-xs text-text font-bold flex-1">{field.name}</span>
-        <span className="font-mono text-[9px] text-muted">{field.area.toFixed(2)} ha</span>
-      </div>
+    <>
+      <TabHeader title="Historique arrosage" subtitle="Enregistrez et suivez l'irrigation de chaque champ" />
 
-      {/* Culture */}
-      <div className="mb-2">
-        <div className="font-mono text-[9px] text-muted tracking-[1px] uppercase mb-1">Culture</div>
-        <div className="flex gap-2">
-          <select
-            value={seedType}
-            onChange={(e) => {
-              const newType = e.target.value as SeedType
-              updateField(field.id, {
-                culture: { seedType: newType, strain: newType === 'beldia' ? '' : strain },
-              })
-            }}
-            className="font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit"
-          >
-            <option value="beldia">Beldia</option>
-            <option value="cali">Cali</option>
-          </select>
-          {seedType === 'cali' && (
-            <select
-              value={strain}
-              onChange={(e) => {
-                updateField(field.id, { culture: { seedType: 'cali', strain: e.target.value } })
-              }}
-              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit"
-            >
-              <option value="">— Choisir strain —</option>
-              {strains.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          )}
-        </div>
-      </div>
-
-      {/* Responsable */}
-      <div className="mb-2">
-        <div className="font-mono text-[9px] text-muted tracking-[1px] uppercase mb-1">Responsable</div>
-        <select
-          value={field.assignedManager || ''}
-          onChange={(e) => updateField(field.id, { assignedManager: e.target.value ? parseInt(e.target.value) : null })}
-          className="w-full font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit"
-        >
-          <option value="">— Aucun —</option>
-          {managers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-        </select>
-      </div>
-
-      {/* Employés */}
-      {workers.length > 0 && (
-        <div>
-          <div className="font-mono text-[9px] text-muted tracking-[1px] uppercase mb-1">Employés assignés</div>
-          <div className="flex flex-wrap gap-1">
-            {workers.map((w) => {
-              const isAssigned = field.assignedEmployees.includes(w.id)
-              return (
-                <button
-                  key={w.id}
-                  onClick={() => toggleEmployee(w.id)}
-                  className={`font-mono text-[10px] px-2 py-0.5 border cursor-pointer transition-all
-                    ${isAssigned
-                      ? 'bg-olive border-olive-lit text-white'
-                      : 'bg-transparent border-border text-muted hover:border-olive hover:text-olive-lit'}`}
-                >
-                  {w.name}
-                </button>
-              )
-            })}
+      <div className="bg-bg border border-border p-4 mb-5">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3">Nouvel arrosage</div>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <FieldSelector value={fieldId} onChange={setFieldId} />
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">DATE</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
           </div>
         </div>
-      )}
-    </div>
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">TYPE</label>
+            <select value={method} onChange={(e) => setMethod(e.target.value as IrrigationMethod)}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
+              {Object.entries(IRRIGATION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">DURÉE</label>
+            <input type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value) || 0)} min={1}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+            <span className="text-[9px] text-muted">min</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">VOL.</label>
+            <input type="number" value={volume} onChange={(e) => setVolume(e.target.value)} placeholder="—"
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+            <span className="text-[9px] text-muted">L</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes (optionnel)"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <button className="btn-active" onClick={handleAdd}>+ Enregistrer</button>
+        </div>
+      </div>
+
+      {/* History */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase">Historique ({sorted.length})</div>
+        <div className="w-[200px]"><FieldSelector value={filterField} onChange={setFilterField} label="Filtre" /></div>
+      </div>
+      {sorted.length ? (
+        <div className="border border-border">
+          <div className="grid grid-cols-[80px_1fr_100px_60px_60px_30px] gap-0 text-[9px] font-mono text-muted uppercase tracking-[.5px] border-b border-border bg-bg/50">
+            <div className="px-2 py-1.5">Date</div><div className="px-2 py-1.5">Champ</div><div className="px-2 py-1.5">Méthode</div>
+            <div className="px-2 py-1.5 text-right">Durée</div><div className="px-2 py-1.5 text-right">Vol.</div><div></div>
+          </div>
+          {sorted.map((w) => {
+            const f = store.fields.find((f) => f.id === w.fieldId)
+            return (
+              <div key={w.id} className="grid grid-cols-[80px_1fr_100px_60px_60px_30px] gap-0 text-xs font-mono border-b border-border/30 hover:bg-olive/5">
+                <div className="px-2 py-1.5 text-muted">{w.date}</div>
+                <div className="px-2 py-1.5 text-text">{f?.name || '?'}</div>
+                <div className="px-2 py-1.5 text-muted">{IRRIGATION_LABELS[w.method]}</div>
+                <div className="px-2 py-1.5 text-right text-cyan">{w.durationMin}′</div>
+                <div className="px-2 py-1.5 text-right text-muted">{w.volumeL ? `${w.volumeL}L` : '—'}</div>
+                <div className="px-1 py-1.5"><button onClick={() => store.removeWatering(w.id)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button></div>
+              </div>
+            )
+          })}
+        </div>
+      ) : <EmptyState text="Aucun arrosage enregistré." />}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════
+//  AMENDEMENTS
+// ═══════════════════════════════════════
+
+const AMENDMENT_LABELS: Record<AmendmentType, string> = { organique: 'Organique', mineral: 'Minéral', foliaire: 'Foliaire', correcteur: 'Correcteur' }
+
+function AmendmentsTab() {
+  const store = useAppStore()
+  const [fieldId, setFieldId] = useState(store.fields[0]?.id || 0)
+  const [filterField, setFilterField] = useState(0)
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [type, setType] = useState<AmendmentType>('organique')
+  const [product, setProduct] = useState('')
+  const [qty, setQty] = useState(10)
+  const [notes, setNotes] = useState('')
+
+  const handleAdd = () => {
+    if (!fieldId) { store.toast('⚠ Sélectionnez un champ', true); return }
+    if (!product.trim()) { store.toast('⚠ Saisissez le nom du produit', true); return }
+    store.addAmendment({ date, fieldId, type, product: product.trim(), quantityKg: qty, notes: notes || undefined })
+    store.toast('✓ Amendement enregistré')
+    setProduct(''); setNotes('')
+  }
+
+  const filtered = filterField ? store.amendmentLog.filter((a) => a.fieldId === filterField) : store.amendmentLog
+  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date))
+
+  return (
+    <>
+      <TabHeader title="Amendements & Engrais" subtitle="Suivi des apports nutritifs par champ" />
+
+      <div className="bg-bg border border-border p-4 mb-5">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3">Nouvel apport</div>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <FieldSelector value={fieldId} onChange={setFieldId} />
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">DATE</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">TYPE</label>
+            <select value={type} onChange={(e) => setType(e.target.value as AmendmentType)}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
+              {Object.entries(AMENDMENT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">PRODUIT</label>
+            <input type="text" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Nom"
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">QTÉ</label>
+            <input type="number" value={qty} onChange={(e) => setQty(parseFloat(e.target.value) || 0)} min={0}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+            <span className="text-[9px] text-muted">kg</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes (optionnel)"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <button className="btn-active" onClick={handleAdd}>+ Enregistrer</button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase">Historique ({sorted.length})</div>
+        <div className="w-[200px]"><FieldSelector value={filterField} onChange={setFilterField} label="Filtre" /></div>
+      </div>
+      {sorted.length ? (
+        <div className="border border-border">
+          <div className="grid grid-cols-[80px_1fr_80px_1fr_60px_30px] gap-0 text-[9px] font-mono text-muted uppercase tracking-[.5px] border-b border-border bg-bg/50">
+            <div className="px-2 py-1.5">Date</div><div className="px-2 py-1.5">Champ</div><div className="px-2 py-1.5">Type</div>
+            <div className="px-2 py-1.5">Produit</div><div className="px-2 py-1.5 text-right">Qté</div><div></div>
+          </div>
+          {sorted.map((a) => {
+            const f = store.fields.find((f) => f.id === a.fieldId)
+            return (
+              <div key={a.id} className="grid grid-cols-[80px_1fr_80px_1fr_60px_30px] gap-0 text-xs font-mono border-b border-border/30 hover:bg-olive/5">
+                <div className="px-2 py-1.5 text-muted">{a.date}</div>
+                <div className="px-2 py-1.5 text-text">{f?.name || '?'}</div>
+                <div className="px-2 py-1.5 text-muted">{AMENDMENT_LABELS[a.type]}</div>
+                <div className="px-2 py-1.5 text-amber">{a.product}</div>
+                <div className="px-2 py-1.5 text-right text-olive-lit">{a.quantityKg}kg</div>
+                <div className="px-1 py-1.5"><button onClick={() => store.removeAmendment(a.id)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button></div>
+              </div>
+            )
+          })}
+        </div>
+      ) : <EmptyState text="Aucun amendement enregistré." />}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════
+//  ANALYSE SOLS
+// ═══════════════════════════════════════
+
+function SoilTab() {
+  const store = useAppStore()
+  const [fieldId, setFieldId] = useState(store.fields[0]?.id || 0)
+  const [filterField, setFilterField] = useState(0)
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [ph, setPh] = useState(7.0); const [n, setN] = useState(0); const [p, setP] = useState(0); const [k, setK] = useState(0)
+  const [om, setOm] = useState(0); const [texture, setTexture] = useState(''); const [notes, setNotes] = useState('')
+
+  const handleAdd = () => {
+    if (!fieldId) { store.toast('⚠ Sélectionnez un champ', true); return }
+    store.addSoilAnalysis({ date, fieldId, ph, nitrogen: n, phosphorus: p, potassium: k, organicMatter: om, texture: texture || undefined, notes: notes || undefined })
+    store.toast('✓ Analyse enregistrée')
+    setNotes(''); setTexture('')
+  }
+
+  const filtered = filterField ? store.soilAnalyses.filter((s) => s.fieldId === filterField) : store.soilAnalyses
+  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date))
+
+  const phColor = (v: number) => v < 6 ? 'text-red' : v > 8 ? 'text-red' : v >= 6.5 && v <= 7.5 ? 'text-olive-lit' : 'text-amber'
+
+  return (
+    <>
+      <TabHeader title="Analyse des sols" subtitle="Résultats d'analyses NPK, pH, matière organique" />
+
+      <div className="bg-bg border border-border p-4 mb-5">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3">Nouvelle analyse</div>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <FieldSelector value={fieldId} onChange={setFieldId} />
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] text-muted min-w-[50px]">DATE</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+          </div>
+        </div>
+        <div className="grid grid-cols-5 gap-2 mb-2">
+          {[['pH', ph, setPh, 0, 14, 0.1, ''], ['N', n, setN, 0, 999, 1, 'mg/kg'], ['P', p, setP, 0, 999, 1, 'mg/kg'], ['K', k, setK, 0, 999, 1, 'mg/kg'], ['M.O.', om, setOm, 0, 100, 0.1, '%']].map(([lbl, val, setter, min, max, step, unit]) => (
+            <div key={lbl as string} className="flex flex-col gap-0.5">
+              <label className="text-[9px] text-muted uppercase tracking-[.5px]">{lbl as string} <span className="text-[8px]">{unit as string}</span></label>
+              <input type="number" value={val as number} onChange={(e) => (setter as (v: number) => void)(parseFloat(e.target.value) || 0)}
+                min={min as number} max={max as number} step={step as number}
+                className="font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit w-full" />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input type="text" value={texture} onChange={(e) => setTexture(e.target.value)} placeholder="Texture (ex: argilo-limoneux)"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <button className="btn-active" onClick={handleAdd}>+ Enregistrer</button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase">Résultats ({sorted.length})</div>
+        <div className="w-[200px]"><FieldSelector value={filterField} onChange={setFilterField} label="Filtre" /></div>
+      </div>
+      {sorted.length ? (
+        <div className="space-y-2">
+          {sorted.map((s) => {
+            const f = store.fields.find((f) => f.id === s.fieldId)
+            return (
+              <div key={s.id} className="border border-border p-3 hover:bg-olive/5 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="font-mono text-[10px] text-muted">{s.date}</span>
+                  <span className="font-mono text-xs text-text font-bold">{f?.name || '?'}</span>
+                  {s.texture && <span className="font-mono text-[10px] text-muted border border-border px-1.5 py-px">{s.texture}</span>}
+                  <button onClick={() => store.removeSoilAnalysis(s.id)} className="ml-auto text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  <div className="text-center"><div className="text-[9px] text-muted">pH</div><div className={`font-mono text-lg font-bold ${phColor(s.ph)}`}>{s.ph}</div></div>
+                  <div className="text-center"><div className="text-[9px] text-muted">N</div><div className="font-mono text-lg text-olive-lit">{s.nitrogen}</div></div>
+                  <div className="text-center"><div className="text-[9px] text-muted">P</div><div className="font-mono text-lg text-amber">{s.phosphorus}</div></div>
+                  <div className="text-center"><div className="text-[9px] text-muted">K</div><div className="font-mono text-lg text-cyan">{s.potassium}</div></div>
+                  <div className="text-center"><div className="text-[9px] text-muted">M.O.%</div><div className="font-mono text-lg text-text">{s.organicMatter}</div></div>
+                </div>
+                {s.notes && <div className="font-mono text-[10px] text-muted mt-2 border-t border-border/30 pt-1">{s.notes}</div>}
+              </div>
+            )
+          })}
+        </div>
+      ) : <EmptyState text="Aucune analyse enregistrée." />}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════
+//  RELIEF
+// ═══════════════════════════════════════
+
+const EXPO_LABELS: Record<Exposition, string> = {
+  nord: '↑ Nord', 'nord-est': '↗ Nord-Est', est: '→ Est', 'sud-est': '↘ Sud-Est',
+  sud: '↓ Sud', 'sud-ouest': '↙ Sud-Ouest', ouest: '← Ouest', 'nord-ouest': '↖ Nord-Ouest', plat: '⊙ Plat',
+}
+const EXPO_SUN: Record<Exposition, string> = {
+  sud: 'Excellent', 'sud-est': 'Très bon', 'sud-ouest': 'Très bon', est: 'Bon', ouest: 'Bon',
+  plat: 'Bon', 'nord-est': 'Modéré', 'nord-ouest': 'Modéré', nord: 'Faible',
+}
+
+function ReliefTab() {
+  const store = useAppStore()
+
+  return (
+    <>
+      <TabHeader title="Relief & Exposition" subtitle="Altitude, pente, orientation et ensoleillement par champ" />
+
+      {store.fields.length > 0 ? (
+        <div className="space-y-3">
+          {store.fields.map((f) => {
+            const r = f.relief || { exposition: 'plat' as Exposition }
+            return (
+              <div key={f.id} className="bg-bg border border-border p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: f.color }} />
+                  <span className="font-mono text-xs text-text font-bold flex-1">{f.name}</span>
+                  <span className="font-mono text-[9px] text-muted">{f.area.toFixed(2)} ha</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-[9px] text-muted uppercase tracking-[.5px] mb-1">Exposition</label>
+                    <select value={r.exposition}
+                      onChange={(e) => store.updateField(f.id, { relief: { ...r, exposition: e.target.value as Exposition } })}
+                      className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
+                      {Object.entries(EXPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] text-muted uppercase tracking-[.5px] mb-1">Ensoleillement</label>
+                    <div className="flex items-center gap-2">
+                      <input type="number" value={r.sunlightHours || ''} placeholder="—"
+                        onChange={(e) => store.updateField(f.id, { relief: { ...r, sunlightHours: e.target.value ? parseFloat(e.target.value) : undefined } })}
+                        className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" min={0} max={16} step={0.5} />
+                      <span className="text-[9px] text-muted">h/jour</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label className="block text-[9px] text-muted uppercase tracking-[.5px] mb-1">Alt. min</label>
+                    <div className="flex items-center gap-1">
+                      <input type="number" value={r.altitudeMin ?? ''} placeholder="—"
+                        onChange={(e) => store.updateField(f.id, { relief: { ...r, altitudeMin: e.target.value ? parseFloat(e.target.value) : undefined } })}
+                        className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+                      <span className="text-[9px] text-muted">m</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] text-muted uppercase tracking-[.5px] mb-1">Alt. max</label>
+                    <div className="flex items-center gap-1">
+                      <input type="number" value={r.altitudeMax ?? ''} placeholder="—"
+                        onChange={(e) => store.updateField(f.id, { relief: { ...r, altitudeMax: e.target.value ? parseFloat(e.target.value) : undefined } })}
+                        className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+                      <span className="text-[9px] text-muted">m</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] text-muted uppercase tracking-[.5px] mb-1">Pente</label>
+                    <div className="flex items-center gap-1">
+                      <input type="number" value={r.slope ?? ''} placeholder="—"
+                        onChange={(e) => store.updateField(f.id, { relief: { ...r, slope: e.target.value ? parseFloat(e.target.value) : undefined } })}
+                        className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" min={0} max={100} />
+                      <span className="text-[9px] text-muted">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary badges */}
+                <div className="flex gap-2 flex-wrap">
+                  <span className="font-mono text-[10px] bg-panel border border-border px-2 py-0.5 text-text">
+                    {EXPO_LABELS[r.exposition]}
+                  </span>
+                  <span className={`font-mono text-[10px] bg-panel border border-border px-2 py-0.5 ${
+                    EXPO_SUN[r.exposition] === 'Excellent' || EXPO_SUN[r.exposition] === 'Très bon' ? 'text-amber' :
+                    EXPO_SUN[r.exposition] === 'Bon' ? 'text-olive-lit' : 'text-red'
+                  }`}>
+                    Soleil: {EXPO_SUN[r.exposition]}{r.sunlightHours ? ` (${r.sunlightHours}h)` : ''}
+                  </span>
+                  {r.slope !== undefined && <span className="font-mono text-[10px] bg-panel border border-border px-2 py-0.5 text-cyan">Pente: {r.slope}%</span>}
+                  {r.altitudeMin !== undefined && r.altitudeMax !== undefined && (
+                    <span className="font-mono text-[10px] bg-panel border border-border px-2 py-0.5 text-muted">{r.altitudeMin}m — {r.altitudeMax}m</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : <EmptyState text="Aucun champ défini." />}
+    </>
   )
 }
