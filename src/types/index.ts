@@ -162,7 +162,7 @@ export interface AppState {
   addField: (field: Field) => void
   removeField: (id: number) => void
   selectField: (id: number | null) => void
-  updateField: (id: number, updates: Partial<Pick<Field, 'culture' | 'assignedEmployees' | 'assignedManager' | 'relief'>>) => void
+  updateField: (id: number, updates: Partial<Pick<Field, 'name' | 'culture' | 'assignedEmployees' | 'assignedManager' | 'relief'>>) => void
   setFieldPoints: (fieldId: number, points: SamplingPoint[], markers: L.Marker[]) => void
   removePoint: (fieldId: number, pointIndex: number) => void
 

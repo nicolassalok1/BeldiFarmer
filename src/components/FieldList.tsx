@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
 import type { Field } from '../types'
@@ -25,55 +26,7 @@ export function FieldList() {
     <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-bg">
       {fields.map((f) => (
         <div key={f.id}>
-          {/* Field card */}
-          <div
-            className={`border-b border-border p-2.5 px-4 cursor-pointer transition-colors hover:bg-olive/10
-              ${f.id === selectedFieldId ? 'bg-olive/15 border-l-[3px] border-l-olive-lit' : ''}`}
-            onClick={() => {
-              selectField(f.id)
-              if (f.layer) {
-                const map = (f.layer as unknown as { _map: L.Map })._map
-                if (map) map.fitBounds(f.layer.getBounds(), { padding: [40, 40] })
-              }
-            }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: f.color }} />
-              <span className="font-ui text-[13px] font-semibold text-text flex-1">{f.name}</span>
-              <span className="font-mono text-[9px] text-amber bg-amber/10 border border-amber/25 px-1.5 py-px">
-                {f.points.length} pts
-              </span>
-            </div>
-            <div className="font-mono text-[10px] text-muted leading-relaxed">
-              {f.area.toFixed(2)} ha · {Math.round(f.perimeter)} m
-            </div>
-            <FieldMeta field={f} employees={employees} />
-            <div className="flex gap-1 mt-1.5">
-              <button
-                className="btn-sm btn-amber"
-                onClick={(e) => { e.stopPropagation(); document.getElementById('btn-generate-' + f.id)?.click() }}
-                data-field-id={f.id}
-                id={`btn-regen-${f.id}`}
-              >
-                ⊕ Générer
-              </button>
-              <button
-                className="btn-sm btn-danger"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  f.layer?.remove()
-                  f.labelMarker?.remove()
-                  f.pointMarkers.forEach((m) => m.remove())
-                  useAppStore.getState().removeField(f.id)
-                  useAppStore.getState().toast(`Champ "${f.name}" supprimé`)
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* Points sub-list */}
+          <FieldCard field={f} isSelected={f.id === selectedFieldId} onSelect={() => selectField(f.id)} employees={employees} />
           {f.points.map((pt, i) => (
             <div
               key={`${f.id}-${i}`}
@@ -104,6 +57,98 @@ export function FieldList() {
           ))}
         </div>
       ))}
+    </div>
+  )
+}
+
+function FieldCard({ field: f, isSelected, onSelect, employees }: {
+  field: Field; isSelected: boolean; onSelect: () => void; employees: { id: number; name: string; role: string }[]
+}) {
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState(f.name)
+  const updateField = useAppStore((s) => s.updateField)
+  const toast = useAppStore((s) => s.toast)
+
+  const handleRename = () => {
+    const newName = editName.trim()
+    if (!newName) { setEditName(f.name); setEditing(false); return }
+    updateField(f.id, { name: newName })
+    // Update label on map
+    if (f.labelMarker) {
+      f.labelMarker.setIcon(L.divIcon({
+        html: `<div style="font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;color:${f.color};text-shadow:0 0 4px #000,0 0 8px #000;white-space:nowrap">${newName}</div>`,
+        iconSize: [0, 0], className: '',
+      }))
+    }
+    toast(`✓ Renommé en "${newName}"`)
+    setEditing(false)
+  }
+
+  const handleDelete = () => {
+    f.layer?.remove()
+    f.labelMarker?.remove()
+    f.pointMarkers.forEach((m) => m.remove())
+    useAppStore.getState().removeField(f.id)
+    useAppStore.getState().toast(`Champ "${f.name}" supprimé`)
+  }
+
+  return (
+    <div
+      className={`border-b border-border p-2.5 px-4 cursor-pointer transition-colors hover:bg-olive/10
+        ${isSelected ? 'bg-olive/15 border-l-[3px] border-l-olive-lit' : ''}`}
+      onClick={() => {
+        onSelect()
+        if (f.layer) {
+          const map = (f.layer as unknown as { _map: L.Map })._map
+          if (map) map.fitBounds(f.layer.getBounds(), { padding: [40, 40] })
+        }
+      }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: f.color }} />
+        {editing ? (
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') { setEditName(f.name); setEditing(false) } }}
+            onBlur={handleRename}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 font-mono text-xs bg-bg border border-olive-lit text-text py-0.5 px-1.5 outline-none"
+          />
+        ) : (
+          <span
+            className="font-ui text-[13px] font-semibold text-text flex-1 hover:text-olive-lit transition-colors"
+            onDoubleClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}
+            title="Double-clic pour renommer"
+          >
+            {f.name}
+          </span>
+        )}
+        <span className="font-mono text-[9px] text-amber bg-amber/10 border border-amber/25 px-1.5 py-px">
+          {f.points.length} pts
+        </span>
+      </div>
+      <div className="font-mono text-[10px] text-muted leading-relaxed">
+        {f.area.toFixed(2)} ha · {Math.round(f.perimeter)} m
+      </div>
+      <FieldMeta field={f} employees={employees} />
+      <div className="flex gap-1 mt-1.5">
+        <button className="btn-sm btn-amber"
+          onClick={(e) => { e.stopPropagation(); document.getElementById('btn-generate-' + f.id)?.click() }}
+          id={`btn-regen-${f.id}`}>
+          ⊕ Générer
+        </button>
+        <button className="btn-sm btn-active"
+          onClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}>
+          ✎ Renommer
+        </button>
+        <button className="btn-sm btn-danger"
+          onClick={(e) => { e.stopPropagation(); handleDelete() }}>
+          ✕ Supprimer
+        </button>
+      </div>
     </div>
   )
 }
