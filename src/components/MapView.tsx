@@ -134,7 +134,6 @@ export function MapView() {
     stopDraw()
 
     const drawOpts = {
-      allowIntersection: false,
       repeatMode: false,
       showArea: true,
       metric: true,
