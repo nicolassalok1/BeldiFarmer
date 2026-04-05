@@ -370,26 +370,26 @@ function WateringTab() {
               className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 mb-2">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted min-w-[50px]">TYPE</label>
+            <label className="text-[10px] text-muted min-w-[40px]">TYPE</label>
             <select value={method} onChange={(e) => setMethod(e.target.value as IrrigationMethod)}
               className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
               {Object.entries(IRRIGATION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted min-w-[50px]">DURÉE</label>
+            <label className="text-[10px] text-muted min-w-[40px]">DURÉE</label>
             <input type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value) || 0)} min={1}
-              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
-            <span className="text-[9px] text-muted">min</span>
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit w-0" />
+            <span className="text-[9px] text-muted shrink-0">min</span>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted min-w-[50px]">VOL.</label>
-            <input type="number" value={volume} onChange={(e) => setVolume(e.target.value)} placeholder="—"
-              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
-            <span className="text-[9px] text-muted">L</span>
-          </div>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <label className="text-[10px] text-muted min-w-[40px]">VOL.</label>
+          <input type="number" value={volume} onChange={(e) => setVolume(e.target.value)} placeholder="optionnel"
+            className="w-[120px] font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <span className="text-[9px] text-muted shrink-0">litres</span>
         </div>
         <div className="flex gap-2">
           <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes (optionnel)"
@@ -469,25 +469,25 @@ function AmendmentsTab() {
               className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 mb-2">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted min-w-[50px]">TYPE</label>
+            <label className="text-[10px] text-muted min-w-[40px]">TYPE</label>
             <select value={type} onChange={(e) => setType(e.target.value as AmendmentType)}
               className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
               {Object.entries(AMENDMENT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted min-w-[50px]">PRODUIT</label>
-            <input type="text" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Nom"
-              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted min-w-[50px]">QTÉ</label>
+            <label className="text-[10px] text-muted min-w-[40px]">QTÉ</label>
             <input type="number" value={qty} onChange={(e) => setQty(parseFloat(e.target.value) || 0)} min={0}
-              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
-            <span className="text-[9px] text-muted">kg</span>
+              className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit w-0" />
+            <span className="text-[9px] text-muted shrink-0">kg</span>
           </div>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <label className="text-[10px] text-muted min-w-[40px]">PRODUIT</label>
+          <input type="text" value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Nom du produit"
+            className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
         </div>
         <div className="flex gap-2">
           <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes (optionnel)"
