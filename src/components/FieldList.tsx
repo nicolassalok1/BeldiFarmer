@@ -174,15 +174,15 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
                 ⊕ Ajouter point
               </button>
             )}
-            <button className="btn-sm btn-cyan"
+            <button className="btn-sm btn-cyan" title="Ouvrir les détails du champ (culture, équipe, arrosage...)"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>
               ◈
             </button>
-            <button className="btn-sm btn-amber"
+            <button className="btn-sm btn-amber" title="Modifier le contour du champ sur la carte"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }) }}>
               ✎
             </button>
-            <button className="btn-sm btn-danger"
+            <button className="btn-sm btn-danger" title="Supprimer ce champ et tous ses points"
               onClick={(e) => { e.stopPropagation(); handleDelete() }}>
               ✕
             </button>
