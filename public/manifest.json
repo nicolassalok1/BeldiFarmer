@@ -1,0 +1,22 @@
+{
+  "name": "ANRAC Prélèvements GPS",
+  "short_name": "ANRAC GPS",
+  "description": "Gestion exploitation agricole et points de prélèvement GPS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#8fa84f",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

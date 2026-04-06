@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { StepIndicator } from './StepIndicator'
 import { exportCSV, exportGeoJSON, exportKML, exportProject, parseProjectFile } from '../utils/exporters'
 import { saveToStorage } from '../utils/persistence'
 import { calcArea } from '../utils/geometry'
+import { cacheTilesForBounds, estimateTileCount } from '../utils/offline'
 import type { GenerationMethod, LatLng } from '../types'
 
 export function Sidebar() {
@@ -74,6 +76,9 @@ export function Sidebar() {
       >
         <span className="text-base">◈</span> DASHBOARD
       </button>
+
+      {/* Offline / Terrain mode */}
+      {store.exploitPolygon && <OfflineSection />}
 
       {/* Step indicator */}
       <Section>
@@ -211,6 +216,73 @@ export function Sidebar() {
       </Section>
 
     </aside>
+  )
+}
+
+function OfflineSection() {
+  const store = useAppStore()
+  const [caching, setCaching] = useState(false)
+  const [progress, setProgress] = useState({ done: 0, total: 0 })
+
+  const handleCacheTiles = async () => {
+    if (!store.exploitPolygon) return
+    const lats = store.exploitPolygon.map((p) => p.lat)
+    const lngs = store.exploitPolygon.map((p) => p.lng)
+    const bounds = {
+      south: Math.min(...lats) - 0.002,
+      north: Math.max(...lats) + 0.002,
+      west: Math.min(...lngs) - 0.002,
+      east: Math.max(...lngs) + 0.002,
+    }
+
+    const count = estimateTileCount(bounds, 14, 19)
+    if (!window.confirm(`Télécharger ~${count} tuiles satellite pour le mode terrain ?\nCela peut prendre quelques minutes.`)) return
+
+    setCaching(true)
+    setProgress({ done: 0, total: count })
+
+    await cacheTilesForBounds(bounds, 14, 19, (done, total) => {
+      setProgress({ done, total })
+    })
+
+    setCaching(false)
+    store.toast(`✓ ${count} tuiles en cache — mode terrain prêt`)
+  }
+
+  const tileCount = store.exploitPolygon
+    ? estimateTileCount({
+        south: Math.min(...store.exploitPolygon.map((p) => p.lat)) - 0.002,
+        north: Math.max(...store.exploitPolygon.map((p) => p.lat)) + 0.002,
+        west: Math.min(...store.exploitPolygon.map((p) => p.lng)) - 0.002,
+        east: Math.max(...store.exploitPolygon.map((p) => p.lng)) + 0.002,
+      }, 14, 19)
+    : 0
+
+  return (
+    <div className="p-3 px-4 border-b border-border">
+      <div className="font-mono text-[10px] text-amber tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3 before:h-px before:bg-amber uppercase">
+        Mode terrain
+      </div>
+      <p className="text-[10px] text-muted mb-2 leading-relaxed">
+        Téléchargez la carte satellite de votre exploitation pour travailler sans connexion dans les champs.
+      </p>
+      {caching ? (
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="flex-1 h-1.5 bg-bg border border-border">
+              <div className="h-full bg-amber transition-all" style={{ width: `${progress.total ? (progress.done / progress.total * 100) : 0}%` }} />
+            </div>
+            <span className="font-mono text-[10px] text-amber">{progress.done}/{progress.total}</span>
+          </div>
+          <p className="font-mono text-[9px] text-muted">Téléchargement en cours...</p>
+        </div>
+      ) : (
+        <button className="w-full py-1.5 bg-amber/10 border border-amber text-amber font-semibold text-[11px] tracking-[1px] uppercase cursor-pointer hover:bg-amber hover:text-black transition-all"
+          onClick={handleCacheTiles}>
+          ↓ Préparer mode terrain (~{tileCount} tuiles)
+        </button>
+      )}
+    </div>
   )
 }
 

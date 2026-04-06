@@ -4,6 +4,9 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import './index.css'
 import App from './App'
+import { registerSW } from './utils/offline'
+
+registerSW()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
