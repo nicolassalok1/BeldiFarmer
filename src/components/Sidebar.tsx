@@ -5,7 +5,7 @@ import { exportCSV, exportGeoJSON, exportKML, exportProject, parseProjectFile } 
 import { saveToStorage } from '../utils/persistence'
 import { calcArea } from '../utils/geometry'
 import { cacheTilesForBounds, estimateTileCount } from '../utils/offline'
-import type { GenerationMethod, LatLng } from '../types'
+import type { LatLng } from '../types'
 
 export function Sidebar() {
   const store = useAppStore()
@@ -162,30 +162,6 @@ export function Sidebar() {
           >
             {store.drawTarget === 'field' ? '■ Annuler' : '▭ Dessiner le champ'}
           </button>
-        </Section>
-      )}
-
-      {/* Step 3: Generation */}
-      {store.fields.length > 0 && (
-        <Section>
-          <SectionTitle>Génération points</SectionTitle>
-          <div className="flex items-center gap-2 mb-1.5">
-            <label className="text-[10px] text-muted min-w-[55px] uppercase">Méthode</label>
-            <select value={store.generationMethod} onChange={(e) => store.setGenerationMethod(e.target.value as GenerationMethod)}
-              className="font-mono text-xs bg-bg border border-border text-text py-1 px-2 outline-none flex-1 focus:border-olive-lit">
-              <option value="grid">Grille régulière</option>
-              <option value="zigzag">Zigzag (W)</option>
-              <option value="random">Aléatoire stratifié</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <label className="text-[10px] text-muted min-w-[55px] uppercase">Densité</label>
-            <input type="number" value={store.density} min={0.5} max={20} step={0.5}
-              onChange={(e) => store.setDensity(parseFloat(e.target.value) || 1)}
-              className="font-mono text-xs bg-bg border border-border text-text py-1 px-2 outline-none flex-1 focus:border-olive-lit" />
-            <span className="text-[10px] text-muted">pts/ha</span>
-          </div>
-          <button className="btn-full btn-amber" id="btn-generate-all">⊕ Générer tous les points</button>
         </Section>
       )}
 

@@ -3,7 +3,6 @@ import L from 'leaflet'
 import 'leaflet-draw'
 import { useAppStore, FIELD_COLORS } from '../store/useAppStore'
 import { calcArea, calcPerimeter, isInsidePolygon } from '../utils/geometry'
-import { generatePoints } from '../utils/generators'
 import { loadFromStorage } from '../utils/persistence'
 import type { LatLng, Field } from '../types'
 
@@ -18,6 +17,18 @@ export function MapView() {
   drawTargetRef.current = drawTarget
 
   const editTarget = useAppStore((s) => s.editTarget)
+  const addPointFieldId = useAppStore((s) => s.addPointFieldId)
+
+  // Crosshair cursor when in add-point mode
+  useEffect(() => {
+    if (addPointFieldId) {
+      containerRef.current?.classList.add('cursor-crosshair')
+      const field = useAppStore.getState().fields.find((f) => f.id === addPointFieldId)
+      if (field) useAppStore.getState().setStatus(`AJOUT POINT — cliquez dans "${field.name}"`)
+    } else {
+      if (!drawTarget) containerRef.current?.classList.remove('cursor-crosshair')
+    }
+  }, [addPointFieldId, drawTarget])
 
   // Initialize map once
   useEffect(() => {
@@ -84,37 +95,42 @@ export function MapView() {
       }
     })
 
-    // Wire up generate-all button
-    const handleGenerateClick = (e: MouseEvent) => {
-      const btn = (e.target as HTMLElement).closest('#btn-generate-all')
-      if (btn) {
-        const store = useAppStore.getState()
-        let total = 0
-        const updatedFields = store.fields.map((f) => {
-          const result = generateForField(f, store.generationMethod, store.density, map)
-          total += result.points.length
-          return result
-        })
-        updatedFields.forEach((f) => {
-          store.setFieldPoints(f.id, f.points, f.pointMarkers)
-        })
-        store.toast(`✓ ${total} points générés sur ${store.fields.length} champ(s)`)
+    // Manual point placement on map click
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      const store = useAppStore.getState()
+      const fieldId = store.addPointFieldId
+      if (!fieldId) return
+
+      const field = store.fields.find((f) => f.id === fieldId)
+      if (!field) return
+
+      const latlng = e.latlng
+      // Check point is inside the field polygon
+      if (!isInsidePolygon({ lat: latlng.lat, lng: latlng.lng }, field.latlngs)) {
+        store.toast('⚠ Point hors du champ', true)
+        return
       }
 
-      // Individual field generate buttons
-      const regenBtn = (e.target as HTMLElement).closest('[id^="btn-regen-"]')
-      if (regenBtn) {
-        const fieldId = parseInt(regenBtn.id.replace('btn-regen-', ''))
-        const store = useAppStore.getState()
-        const field = store.fields.find((f) => f.id === fieldId)
-        if (field) {
-          const result = generateForField(field, store.generationMethod, store.density, map)
-          store.setFieldPoints(field.id, result.points, result.pointMarkers)
-          store.toast(`✓ ${result.points.length} points pour "${field.name}"`)
-        }
-      }
-    }
-    document.addEventListener('click', handleGenerateClick)
+      const ptNum = field.points.length + 1
+      const label = 'P' + String(ptNum).padStart(3, '0')
+
+      const icon = L.divIcon({
+        html: `<div style="
+          background:${field.color};color:#000;
+          font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;
+          width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+          border:2px solid #0d1117;border-radius:50%;box-shadow:0 0 0 1px ${field.color};
+        ">${ptNum}</div>`,
+        iconSize: [24, 24], iconAnchor: [12, 12],
+      })
+
+      const marker = L.marker(latlng, { icon })
+        .addTo(map)
+        .bindPopup(`<b>${label}</b><br>${field.name}<br>Lat: ${latlng.lat.toFixed(6)}<br>Lng: ${latlng.lng.toFixed(6)}`)
+
+      store.addManualPoint(fieldId, { label, lat: latlng.lat, lng: latlng.lng }, marker)
+      store.toast(`✓ ${label} ajouté dans "${field.name}"`)
+    })
 
     mapRef.current = map
 
@@ -122,7 +138,6 @@ export function MapView() {
     restorePersistedData(map)
 
     return () => {
-      document.removeEventListener('click', handleGenerateClick)
       map.remove()
       mapRef.current = null
     }
@@ -293,45 +308,6 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
   if (input) input.value = ''
   store.setStatus(`CHAMP "${name.toUpperCase()}" AJOUTÉ`)
   store.toast(`✓ "${name}" ajouté — ${area.toFixed(2)} ha`)
-}
-
-function generateForField(
-  field: Field,
-  method: string,
-  density: number,
-  map: L.Map
-): Field {
-  // Remove existing markers
-  field.pointMarkers.forEach((m) => m.remove())
-
-  const targetCount = Math.max(1, Math.round(field.area * density))
-  const generated = generatePoints(field.latlngs, method as 'grid' | 'zigzag' | 'random', targetCount)
-
-  const prefix = field.name.substring(0, 3).toUpperCase().replace(/\s/g, '')
-  const points = generated.map((ll, i) => ({
-    label: `${prefix}-${String(i + 1).padStart(2, '0')}`,
-    lat: ll.lat,
-    lng: ll.lng,
-  }))
-
-  const pointMarkers = points.map((pt, i) => {
-    const icon = L.divIcon({
-      html: `<div style="
-        background:${field.color};color:#000;
-        font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;
-        width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-        border:2px solid #0d1117;border-radius:50%;box-shadow:0 0 0 1px ${field.color};
-      ">${i + 1}</div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    })
-
-    return L.marker([pt.lat, pt.lng], { icon })
-      .addTo(map)
-      .bindPopup(`<b>${pt.label}</b><br>${field.name}<br>Lat: ${pt.lat.toFixed(6)}<br>Lng: ${pt.lng.toFixed(6)}`)
-  })
-
-  return { ...field, points, pointMarkers }
 }
 
 // ── Restore persisted data ──

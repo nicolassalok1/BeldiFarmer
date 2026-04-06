@@ -126,6 +126,7 @@ export interface AppState {
   // Drawing
   drawTarget: DrawTarget
   editTarget: EditTarget
+  addPointFieldId: number | null  // when set, clicking map adds point to this field
 
   // Generation config
   generationMethod: GenerationMethod
@@ -176,6 +177,9 @@ export interface AppState {
   setEditTarget: (target: EditTarget) => void
   updateExploitPolygon: (polygon: LatLng[], area: number) => void
   updateFieldPolygon: (fieldId: number, latlngs: LatLng[], area: number, perimeter: number) => void
+  setAddPointFieldId: (fieldId: number | null) => void
+  addManualPoint: (fieldId: number, point: SamplingPoint, marker: L.Marker) => void
+  renamePoint: (fieldId: number, pointIndex: number, newLabel: string) => void
   setGenerationMethod: (method: GenerationMethod) => void
   setDensity: (density: number) => void
 

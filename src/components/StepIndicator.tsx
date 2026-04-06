@@ -1,6 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
 
-const STEPS = ['EXPLOITATION', 'CHAMPS', 'POINTS']
+const STEPS = ['EXPLOITATION', 'CHAMPS', 'PRÉLÈVEMENTS']
 
 export function StepIndicator() {
   const currentStep = useAppStore((s) => s.currentStep)

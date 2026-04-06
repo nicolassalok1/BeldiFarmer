@@ -29,32 +29,7 @@ export function FieldList() {
         <div key={f.id}>
           <FieldCard field={f} isSelected={f.id === selectedFieldId} onSelect={() => selectField(f.id)} employees={employees} />
           {f.points.map((pt, i) => (
-            <div
-              key={`${f.id}-${i}`}
-              className="font-mono text-[10px] text-muted py-1 px-4 pl-8 border-b border-border/50 cursor-pointer transition-colors hover:bg-amber/5 flex items-center gap-1.5"
-              onClick={() => {
-                const marker = f.pointMarkers[i]
-                if (marker) {
-                  const map = (marker as unknown as { _map: L.Map })._map
-                  if (map) map.setView([pt.lat, pt.lng], 17)
-                  marker.openPopup()
-                }
-              }}
-            >
-              <span className="text-amber min-w-[36px]">{pt.label}</span>
-              <span className="flex-1">{pt.lat.toFixed(6)}, {pt.lng.toFixed(6)}</span>
-              <button
-                className="text-border bg-transparent border-none cursor-pointer text-xs px-0.5 hover:text-red transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const marker = f.pointMarkers[i]
-                  if (marker) marker.remove()
-                  useAppStore.getState().removePoint(f.id, i)
-                }}
-              >
-                ✕
-              </button>
-            </div>
+            <PointRow key={`${f.id}-${i}`} field={f} point={pt} index={i} />
           ))}
         </div>
       ))}
@@ -71,6 +46,8 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
   const updateField = useAppStore((s) => s.updateField)
   const editTarget = useAppStore((s) => s.editTarget)
   const isEditingThis = editTarget?.type === 'field' && editTarget.fieldId === f.id
+  const addPointFieldId = useAppStore((s) => s.addPointFieldId)
+  const addingPointHere = addPointFieldId === f.id
   const toast = useAppStore((s) => s.toast)
 
   const togglePoints = () => {
@@ -186,18 +163,24 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
           </>
         ) : (
           <>
+            {addingPointHere ? (
+              <button className="btn-sm btn-danger flex-1"
+                onClick={(e) => { e.stopPropagation(); useAppStore.getState().setAddPointFieldId(null); useAppStore.getState().setStatus('EN ATTENTE') }}>
+                ■ Arrêter ajout points
+              </button>
+            ) : (
+              <button className="btn-sm btn-amber"
+                onClick={(e) => { e.stopPropagation(); useAppStore.getState().setAddPointFieldId(f.id) }}>
+                ⊕ Ajouter point
+              </button>
+            )}
             <button className="btn-sm btn-cyan"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>
-              ◈ Détails
+              ◈
             </button>
             <button className="btn-sm btn-amber"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }) }}>
-              ✎ Contour
-            </button>
-            <button className="btn-sm btn-amber"
-              onClick={(e) => { e.stopPropagation(); document.getElementById('btn-generate-' + f.id)?.click() }}
-              id={`btn-regen-${f.id}`}>
-              ⊕
+              ✎
             </button>
             <button className="btn-sm btn-danger"
               onClick={(e) => { e.stopPropagation(); handleDelete() }}>
@@ -206,6 +189,69 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function PointRow({ field: f, point: pt, index: i }: { field: Field; point: { label: string; lat: number; lng: number }; index: number }) {
+  const [editingLabel, setEditingLabel] = useState(false)
+  const [label, setLabel] = useState(pt.label)
+
+  const handleRenamePoint = () => {
+    const newLabel = label.trim()
+    if (!newLabel) { setLabel(pt.label); setEditingLabel(false); return }
+    useAppStore.getState().renamePoint(f.id, i, newLabel)
+    // Update popup
+    const marker = f.pointMarkers[i]
+    if (marker) marker.setPopupContent(`<b>${newLabel}</b><br>${f.name}<br>Lat: ${pt.lat.toFixed(6)}<br>Lng: ${pt.lng.toFixed(6)}`)
+    setEditingLabel(false)
+  }
+
+  return (
+    <div
+      className="font-mono text-[10px] text-muted py-1 px-4 pl-8 border-b border-border/50 cursor-pointer transition-colors hover:bg-amber/5 flex items-center gap-1.5"
+      onClick={() => {
+        const marker = f.pointMarkers[i]
+        if (marker) {
+          const map = (marker as unknown as { _map: L.Map })._map
+          if (map) map.setView([pt.lat, pt.lng], 17)
+          marker.openPopup()
+        }
+      }}
+    >
+      {editingLabel ? (
+        <input
+          type="text" value={label} onChange={(e) => setLabel(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleRenamePoint(); if (e.key === 'Escape') { setLabel(pt.label); setEditingLabel(false) } }}
+          onBlur={handleRenamePoint} autoFocus
+          onClick={(e) => e.stopPropagation()}
+          className="w-[50px] font-mono text-[10px] bg-bg border border-olive-lit text-amber py-0 px-1 outline-none"
+        />
+      ) : (
+        <span className="text-amber min-w-[36px] hover:underline"
+          onDoubleClick={(e) => { e.stopPropagation(); setLabel(pt.label); setEditingLabel(true) }}
+          title="Double-clic pour renommer">
+          {pt.label}
+        </span>
+      )}
+      <span className="flex-1">{pt.lat.toFixed(6)}, {pt.lng.toFixed(6)}</span>
+      <button
+        className="text-muted bg-transparent border-none cursor-pointer text-[10px] px-0.5 hover:text-olive-lit transition-colors"
+        onClick={(e) => { e.stopPropagation(); setLabel(pt.label); setEditingLabel(true) }}
+        title="Renommer">
+        ✎
+      </button>
+      <button
+        className="text-border bg-transparent border-none cursor-pointer text-xs px-0.5 hover:text-red transition-colors"
+        onClick={(e) => {
+          e.stopPropagation()
+          const marker = f.pointMarkers[i]
+          if (marker) marker.remove()
+          useAppStore.getState().removePoint(f.id, i)
+        }}
+      >
+        ✕
+      </button>
     </div>
   )
 }

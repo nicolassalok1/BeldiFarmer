@@ -35,7 +35,7 @@ function persist(state: AppState) {
 export const useAppStore = create<AppState>((set, get) => ({
   exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,
   fields: [], fieldIdCounter: 0, selectedFieldId: null,
-  drawTarget: null, editTarget: null, generationMethod: 'grid', density: 1,
+  drawTarget: null, editTarget: null, addPointFieldId: null, generationMethod: 'grid', density: 1,
   employees: [], employeeIdCounter: 0, strains: [],
   wateringLog: [], wateringIdCounter: 0,
   amendmentLog: [], amendmentIdCounter: 0,
@@ -90,6 +90,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ── Drawing / Config ──
   setDrawTarget: (target) => set({ drawTarget: target }),
   setEditTarget: (target) => set({ editTarget: target }),
+  setAddPointFieldId: (fieldId) => set({ addPointFieldId: fieldId }),
+  addManualPoint: (fieldId, point, marker) => {
+    set((s) => ({
+      fields: s.fields.map((f) => f.id === fieldId ? { ...f, points: [...f.points, point], pointMarkers: [...f.pointMarkers, marker] } : f),
+    }))
+    persist(get())
+  },
+  renamePoint: (fieldId, pointIndex, newLabel) => {
+    set((s) => ({
+      fields: s.fields.map((f) => {
+        if (f.id !== fieldId) return f
+        const newPoints = [...f.points]
+        newPoints[pointIndex] = { ...newPoints[pointIndex], label: newLabel }
+        return { ...f, points: newPoints }
+      }),
+    }))
+    persist(get())
+  },
   updateExploitPolygon: (polygon, area) => {
     set({ exploitPolygon: polygon, exploitArea: area })
     persist(get())
