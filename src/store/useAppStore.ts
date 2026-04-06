@@ -35,7 +35,7 @@ function persist(state: AppState) {
 export const useAppStore = create<AppState>((set, get) => ({
   exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,
   fields: [], fieldIdCounter: 0, selectedFieldId: null,
-  drawTarget: null, generationMethod: 'grid', density: 1,
+  drawTarget: null, editTarget: null, generationMethod: 'grid', density: 1,
   employees: [], employeeIdCounter: 0, strains: [],
   wateringLog: [], wateringIdCounter: 0,
   amendmentLog: [], amendmentIdCounter: 0,
@@ -89,6 +89,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // ── Drawing / Config ──
   setDrawTarget: (target) => set({ drawTarget: target }),
+  setEditTarget: (target) => set({ editTarget: target }),
+  updateExploitPolygon: (polygon, area) => {
+    set({ exploitPolygon: polygon, exploitArea: area })
+    persist(get())
+  },
+  updateFieldPolygon: (fieldId, latlngs, area, perimeter) => {
+    set((s) => ({ fields: s.fields.map((f) => f.id === fieldId ? { ...f, latlngs, area, perimeter } : f) }))
+    persist(get())
+  },
   setGenerationMethod: (method) => { set({ generationMethod: method }); persist(get()) },
   setDensity: (density) => { set({ density }); persist(get()) },
 

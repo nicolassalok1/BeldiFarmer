@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
-import type { Field } from '../types'
+import { calcArea, calcPerimeter } from '../utils/geometry'
+import type { Field, LatLng } from '../types'
 
 export function FieldList() {
   const fields = useAppStore((s) => s.fields)
@@ -68,6 +69,8 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
   const [editName, setEditName] = useState(f.name)
   const [pointsVisible, setPointsVisible] = useState(true)
   const updateField = useAppStore((s) => s.updateField)
+  const editTarget = useAppStore((s) => s.editTarget)
+  const isEditingThis = editTarget?.type === 'field' && editTarget.fieldId === f.id
   const toast = useAppStore((s) => s.toast)
 
   const togglePoints = () => {
@@ -154,24 +157,53 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
         {f.area.toFixed(2)} ha · {Math.round(f.perimeter)} m
       </div>
       <FieldMeta field={f} employees={employees} />
-      <div className="flex gap-1 mt-1.5">
-        <button className="btn-sm btn-cyan"
-          onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>
-          ◈ Détails
-        </button>
-        <button className="btn-sm btn-amber"
-          onClick={(e) => { e.stopPropagation(); document.getElementById('btn-generate-' + f.id)?.click() }}
-          id={`btn-regen-${f.id}`}>
-          ⊕ Générer
-        </button>
-        <button className="btn-sm btn-active"
-          onClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}>
-          ✎
-        </button>
-        <button className="btn-sm btn-danger"
-          onClick={(e) => { e.stopPropagation(); handleDelete() }}>
-          ✕
-        </button>
+      <div className="flex gap-1 mt-1.5 flex-wrap">
+        {isEditingThis ? (
+          <>
+            <button className="btn-sm btn-active flex-1"
+              onClick={(e) => { e.stopPropagation()
+                if (f.layer) {
+                  const raw = f.layer.getLatLngs()[0] as L.LatLng[]
+                  const latlngs: LatLng[] = raw.map((ll) => ({ lat: ll.lat, lng: ll.lng }))
+                  const area = calcArea(latlngs) / 10000
+                  const perimeter = calcPerimeter(raw)
+                  useAppStore.getState().updateFieldPolygon(f.id, latlngs, area, perimeter)
+                  if (f.labelMarker) f.labelMarker.setLatLng(f.layer.getBounds().getCenter())
+                }
+                useAppStore.getState().setEditTarget(null)
+                useAppStore.getState().toast(`✓ Contour de "${f.name}" mis à jour`)
+              }}>
+              ✓ Valider
+            </button>
+            <button className="btn-sm btn-danger"
+              onClick={(e) => { e.stopPropagation()
+                if (f.layer) f.layer.setLatLngs(f.latlngs.map((ll) => [ll.lat, ll.lng]))
+                useAppStore.getState().setEditTarget(null)
+              }}>
+              Annuler
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn-sm btn-cyan"
+              onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>
+              ◈ Détails
+            </button>
+            <button className="btn-sm btn-amber"
+              onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }) }}>
+              ✎ Contour
+            </button>
+            <button className="btn-sm btn-amber"
+              onClick={(e) => { e.stopPropagation(); document.getElementById('btn-generate-' + f.id)?.click() }}
+              id={`btn-regen-${f.id}`}>
+              ⊕
+            </button>
+            <button className="btn-sm btn-danger"
+              onClick={(e) => { e.stopPropagation(); handleDelete() }}>
+              ✕
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

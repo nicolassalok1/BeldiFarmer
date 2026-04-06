@@ -2,7 +2,8 @@ import { useAppStore } from '../store/useAppStore'
 import { StepIndicator } from './StepIndicator'
 import { exportCSV, exportGeoJSON, exportKML, exportProject, parseProjectFile } from '../utils/exporters'
 import { saveToStorage } from '../utils/persistence'
-import type { GenerationMethod } from '../types'
+import { calcArea } from '../utils/geometry'
+import type { GenerationMethod, LatLng } from '../types'
 
 export function Sidebar() {
   const store = useAppStore()
@@ -93,12 +94,44 @@ export function Sidebar() {
             {store.drawTarget === 'exploit' ? '■ Annuler' : '◈ Dessiner l\'exploitation'}
           </button>
         ) : (
-          <div className="bg-bg border border-border p-2 font-mono text-[11px] text-text flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-cyan shrink-0" />
-            <span className="flex-1">
-              Exploitation — <span className="text-cyan">{store.exploitArea.toFixed(2)} ha</span>
-            </span>
-            <button className="btn-sm btn-danger" onClick={handleClearAll}>Redessiner</button>
+          <div className="bg-bg border border-border p-2 font-mono text-[11px] text-text">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-cyan shrink-0" />
+              <span className="flex-1">
+                Exploitation — <span className="text-cyan">{store.exploitArea.toFixed(2)} ha</span>
+              </span>
+            </div>
+            <div className="flex gap-1 mt-1.5">
+              {store.editTarget?.type === 'exploit' ? (
+                <button className="btn-sm btn-active flex-1" onClick={() => {
+                  // Save edited polygon
+                  if (store.exploitLayer) {
+                    const raw = store.exploitLayer.getLatLngs()[0] as L.LatLng[]
+                    const polygon: LatLng[] = raw.map((ll) => ({ lat: ll.lat, lng: ll.lng }))
+                    const area = calcArea(polygon) / 10000
+                    store.updateExploitPolygon(polygon, area)
+                    // Update label position
+                    if (store.exploitLabel) {
+                      store.exploitLabel.setLatLng(store.exploitLayer.getBounds().getCenter())
+                    }
+                  }
+                  store.setEditTarget(null)
+                  store.toast('✓ Exploitation mise à jour')
+                }}>✓ Valider</button>
+              ) : (
+                <button className="btn-sm btn-cyan flex-1" onClick={() => store.setEditTarget({ type: 'exploit' })}>✎ Modifier contour</button>
+              )}
+              {store.editTarget?.type === 'exploit' && (
+                <button className="btn-sm btn-danger" onClick={() => {
+                  // Cancel: restore original polygon
+                  if (store.exploitLayer && store.exploitPolygon) {
+                    store.exploitLayer.setLatLngs(store.exploitPolygon.map((ll) => [ll.lat, ll.lng]))
+                  }
+                  store.setEditTarget(null)
+                }}>Annuler</button>
+              )}
+              {!store.editTarget && <button className="btn-sm btn-danger" onClick={handleClearAll}>Redessiner</button>}
+            </div>
           </div>
         )}
       </Section>

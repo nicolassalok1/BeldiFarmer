@@ -17,6 +17,8 @@ export function MapView() {
   const drawTargetRef = useRef(drawTarget)
   drawTargetRef.current = drawTarget
 
+  const editTarget = useAppStore((s) => s.editTarget)
+
   // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -153,6 +155,41 @@ export function MapView() {
       containerRef.current?.classList.remove('cursor-crosshair')
     }
   }, [drawTarget])
+
+  // Edit mode: enable/disable vertex editing on polygons
+  useEffect(() => {
+    const store = useAppStore.getState()
+
+    // Disable editing on all polygons first
+    if (store.exploitLayer) {
+      (store.exploitLayer as any).editing?.disable()
+      store.exploitLayer.setStyle({ dashArray: '8 4' })
+    }
+    store.fields.forEach((f) => {
+      if (f.layer) {
+        (f.layer as any).editing?.disable()
+        f.layer.setStyle({ weight: 2 })
+      }
+    })
+
+    if (!editTarget) {
+      store.setStatus(store.fields.length > 0 ? 'EN ATTENTE' : store.exploitPolygon ? 'AJOUTEZ VOS CHAMPS' : 'EN ATTENTE')
+      return
+    }
+
+    if (editTarget.type === 'exploit' && store.exploitLayer) {
+      (store.exploitLayer as any).editing?.enable()
+      store.exploitLayer.setStyle({ dashArray: '', weight: 4 })
+      store.setStatus('ÉDITION EXPLOITATION — déplacez les sommets puis cliquez Valider')
+    } else if (editTarget.type === 'field') {
+      const field = store.fields.find((f) => f.id === editTarget.fieldId)
+      if (field?.layer) {
+        (field.layer as any).editing?.enable()
+        field.layer.setStyle({ weight: 4 })
+        store.setStatus(`ÉDITION "${field.name.toUpperCase()}" — déplacez les sommets`)
+      }
+    }
+  }, [editTarget])
 
   function stopDraw() {
     if (drawHandlerRef.current) {

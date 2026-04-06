@@ -105,6 +105,7 @@ export interface Field {
 }
 
 export type DrawTarget = 'exploit' | 'field' | null
+export type EditTarget = { type: 'exploit' } | { type: 'field'; fieldId: number } | null
 export type GenerationMethod = 'grid' | 'zigzag' | 'random'
 
 export type DashboardTab = 'overview' | 'cultures' | 'personnel' | 'watering' | 'amendments' | 'soil' | 'relief'
@@ -124,6 +125,7 @@ export interface AppState {
 
   // Drawing
   drawTarget: DrawTarget
+  editTarget: EditTarget
 
   // Generation config
   generationMethod: GenerationMethod
@@ -171,6 +173,9 @@ export interface AppState {
 
   // Drawing
   setDrawTarget: (target: DrawTarget) => void
+  setEditTarget: (target: EditTarget) => void
+  updateExploitPolygon: (polygon: LatLng[], area: number) => void
+  updateFieldPolygon: (fieldId: number, latlngs: LatLng[], area: number, perimeter: number) => void
   setGenerationMethod: (method: GenerationMethod) => void
   setDensity: (density: number) => void
 
