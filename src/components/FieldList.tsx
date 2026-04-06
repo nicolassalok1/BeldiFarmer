@@ -75,6 +75,11 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
   }
 
   const handleDelete = () => {
+    const pts = f.points.length
+    const msg = pts > 0
+      ? `Supprimer le champ "${f.name}" et ses ${pts} point${pts > 1 ? 's' : ''} de prélèvement ?\nCette action est irréversible.`
+      : `Supprimer le champ "${f.name}" ?\nCette action est irréversible.`
+    if (!window.confirm(msg)) return
     f.layer?.remove()
     f.labelMarker?.remove()
     f.pointMarkers.forEach((m) => m.remove())
