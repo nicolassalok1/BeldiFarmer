@@ -257,7 +257,10 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
   layer.addTo(map)
 
   const fieldId = store.fieldIdCounter + 1
-  layer.on('click', () => useAppStore.getState().openFieldDetail(fieldId))
+  layer.on('click', () => {
+      useAppStore.getState().selectField(fieldId)
+      document.getElementById('field-card-' + fieldId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
 
   const area = calcArea(latlngs) / 10000
   const perimeter = calcPerimeter(rawLatLngs)

@@ -107,8 +107,9 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
 
   return (
     <div
-      className={`border-b border-border p-2.5 px-4 cursor-pointer transition-colors hover:bg-olive/10
-        ${isSelected ? 'bg-olive/15 border-l-[3px] border-l-olive-lit' : ''}`}
+      id={`field-card-${f.id}`}
+      className={`border-b border-border p-2.5 px-4 cursor-pointer transition-all duration-300
+        ${isSelected ? 'bg-olive/20 border-l-[3px] border-l-olive-lit shadow-[inset_0_0_12px_rgba(143,168,79,0.15)]' : 'hover:bg-olive/10'}`}
       onClick={() => {
         onSelect()
         if (f.layer) {
