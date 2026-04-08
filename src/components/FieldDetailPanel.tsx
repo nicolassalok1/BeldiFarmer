@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
 import { computeFieldRelief } from '../utils/terrain-auto'
 import { triggerAutoReliefIfNeeded } from '../utils/relief-background'
 import type { FieldDetailTab, SeedType, IrrigationMethod, AmendmentType, Exposition } from '../types'
+
+// Three.js is ~130 KB gzipped — lazy-load so the initial bundle stays lean.
+// Only downloaded if/when the user clicks "Afficher le graphique 3D".
+const Terrain3DView = lazy(() =>
+  import('./Terrain3DView').then((m) => ({ default: m.Terrain3DView })),
+)
 
 const TABS: { key: FieldDetailTab; label: string }[] = [
   { key: 'info', label: 'Infos' },
@@ -459,6 +465,7 @@ function ReliefTab() {
   const toast = useAppStore((s) => s.toast)
   const r = field.relief || { exposition: 'plat' as Exposition }
   const [computing, setComputing] = useState(false)
+  const [show3D, setShow3D] = useState(false)
 
   // Auto-trigger relief compute the first time the user opens this tab on a
   // zone that has no relief yet. Also handles the spinner state so the user
@@ -567,6 +574,31 @@ function ReliefTab() {
             onChange={(e) => update({ slope: e.target.value ? parseFloat(e.target.value) : undefined })}
             className="w-full font-mono text-xs bg-bg border border-border text-text py-2 px-3 outline-none focus:border-olive-lit placeholder:text-muted" />
         </div>
+      </div>
+
+      {/* 3D terrain visualization — hidden by default, fetched on demand */}
+      <div>
+        {!show3D ? (
+          <button
+            onClick={() => setShow3D(true)}
+            className="btn-amber w-full text-[11px] py-2"
+            title="Récupère une grille d'altitudes et affiche la forme du terrain en 3D interactif"
+          >
+            ▲ Afficher le graphique 3D
+          </button>
+        ) : (
+          <Suspense
+            fallback={
+              <div className="border border-border bg-bg p-6 flex items-center justify-center">
+                <span className="font-mono text-[10px] text-cyan animate-pulse">
+                  Chargement du moteur 3D…
+                </span>
+              </div>
+            }
+          >
+            <Terrain3DView field={field} onClose={() => setShow3D(false)} />
+          </Suspense>
+        )}
       </div>
     </div>
   )

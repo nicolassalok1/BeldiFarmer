@@ -15,6 +15,7 @@
 import type { Field, LatLng, ReliefInfo } from '../types'
 import {
   sampleFieldPoints,
+  sampleBoundingBoxGrid,
   computeReliefStats,
   bearingToExposition,
 } from './terrain'
@@ -126,4 +127,92 @@ function polygonCentroid(latlngs: LatLng[]): LatLng {
 function round(value: number, decimals: number): number {
   const factor = 10 ** decimals
   return Math.round(value * factor) / factor
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  3D TERRAIN GRID
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Dense regular grid of elevations covering a field's bounding box,
+ * ready to be consumed by a 3D surface mesh renderer.
+ *
+ * The grid is kept rectangular (no holes) so that the surface can be
+ * rendered continuously; the `inside` mask lets the renderer visually
+ * distinguish cells that actually belong to the polygon from the
+ * surrounding context.
+ *
+ * @see sampleBoundingBoxGrid for the geometry, {@link fetchElevations}
+ *      for the DEM fetch.
+ */
+export interface FieldElevationGrid {
+  width: number              // grid width  (columns, lng direction)
+  height: number             // grid height (rows,    lat direction)
+  points: LatLng[]           // length = width * height, row-major
+  elevations: number[]       // length = width * height, meters
+  inside: boolean[]          // length = width * height, polygon membership
+  altMin: number             // min elevation across the grid (meters)
+  altMax: number             // max elevation across the grid (meters)
+  bboxWidthM: number         // bounding box width in local meters (east-west)
+  bboxHeightM: number        // bounding box height in local meters (north-south)
+}
+
+/**
+ * Pick a grid resolution adapted to the field area. Balances visual
+ * quality of the 3D surface against API batch count (each batch = 100
+ * points max, ~0.5-1 s per batch on Open-Meteo Elevation).
+ */
+export function adaptiveGridSize(areaHa: number): number {
+  if (areaHa < 0.5) return 16
+  if (areaHa < 2) return 20
+  if (areaHa < 10) return 25
+  return 30
+}
+
+/**
+ * Fetch a dense elevation grid for a field. This is the pendant of
+ * {@link computeFieldRelief} but aimed at 3D visualization rather than
+ * statistical summary.
+ *
+ * @throws {@link TerrainApiError} on network/HTTP/parsing failure.
+ */
+export async function fetchFieldElevationGrid(
+  field: Field,
+  opts: { gridSize?: number } = {},
+): Promise<FieldElevationGrid> {
+  const n = opts.gridSize ?? adaptiveGridSize(field.area)
+  const { points, width, height, inside } = sampleBoundingBoxGrid(field.latlngs, n)
+  if (points.length < 4) {
+    throw new TerrainApiError("Polygone trop petit pour générer une grille 3D")
+  }
+
+  const samples = await fetchElevations(points)
+  const elevations = samples.map((s) => s.altitude)
+
+  let altMin = Infinity
+  let altMax = -Infinity
+  for (const z of elevations) {
+    if (z < altMin) altMin = z
+    if (z > altMax) altMax = z
+  }
+
+  // Compute bounding box dimensions in local meters via an equirectangular
+  // projection around the polygon centroid — this is what the 3D renderer
+  // needs for a correctly proportioned surface.
+  const lats = field.latlngs.map((p) => p.lat)
+  const lngs = field.latlngs.map((p) => p.lng)
+  const south = Math.min(...lats)
+  const north = Math.max(...lats)
+  const west = Math.min(...lngs)
+  const east = Math.max(...lngs)
+  const midLatRad = ((south + north) / 2) * Math.PI / 180
+  const EARTH_RADIUS_M = 6371000
+  const bboxHeightM = ((north - south) * Math.PI / 180) * EARTH_RADIUS_M
+  const bboxWidthM = ((east - west) * Math.PI / 180) * Math.cos(midLatRad) * EARTH_RADIUS_M
+
+  return {
+    width, height, points, elevations, inside,
+    altMin, altMax,
+    bboxWidthM, bboxHeightM,
+  }
 }

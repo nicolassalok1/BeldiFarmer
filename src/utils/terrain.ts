@@ -106,6 +106,54 @@ export function sampleFieldPoints(latlngs: LatLng[], target: number): LatLng[] {
   return [...vertices, ...interiorKept.filter((_, i) => i % stride === 0).slice(0, budget)]
 }
 
+/**
+ * Sample a regular N×N grid over the polygon's bounding box (including
+ * points that fall outside the polygon). Returns the flattened point list
+ * together with the grid dimensions and a boolean "inside" mask, so
+ * downstream consumers (e.g. a 3D mesh renderer) can choose whether to
+ * show or mask out-of-polygon cells.
+ *
+ * Unlike {@link sampleFieldPoints}, this does NOT drop exterior points —
+ * it keeps the whole bounding box so that a surface mesh can be rendered
+ * continuously without holes. Polygon membership is surfaced via `inside`.
+ *
+ * @param latlngs Field polygon (>= 3 points, unclosed ring).
+ * @param n       Grid resolution (n×n cells). Clamped to [8, 40].
+ */
+export function sampleBoundingBoxGrid(
+  latlngs: LatLng[],
+  n: number,
+): { points: LatLng[]; width: number; height: number; inside: boolean[] } {
+  if (latlngs.length < 3) {
+    return { points: [], width: 0, height: 0, inside: [] }
+  }
+  const size = clamp(Math.round(n), 8, 40)
+
+  const lats = latlngs.map((p) => p.lat)
+  const lngs = latlngs.map((p) => p.lng)
+  const south = Math.min(...lats)
+  const north = Math.max(...lats)
+  const west = Math.min(...lngs)
+  const east = Math.max(...lngs)
+
+  const points: LatLng[] = []
+  const inside: boolean[] = []
+  // j is the row (lat direction, south → north)
+  // i is the column (lng direction, west → east)
+  // Row-major layout: index = j * size + i — compatible with a PlaneGeometry.
+  for (let j = 0; j < size; j++) {
+    const lat = size === 1 ? (south + north) / 2 : south + ((north - south) * j) / (size - 1)
+    for (let i = 0; i < size; i++) {
+      const lng = size === 1 ? (west + east) / 2 : west + ((east - west) * i) / (size - 1)
+      const p: LatLng = { lat, lng }
+      points.push(p)
+      inside.push(isInsidePolygon(p, latlngs))
+    }
+  }
+
+  return { points, width: size, height: size, inside }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  PROJECTION & PLANE FIT
 // ═══════════════════════════════════════════════════════════════════════
