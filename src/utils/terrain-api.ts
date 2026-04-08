@@ -12,17 +12,19 @@
 import type { LatLng } from '../types'
 import type { ReliefSample } from './terrain'
 
-const ELEVATION_URL = 'https://api.open-meteo.com/v1/elevation'
+// Elevation API — OpenTopoData (https://www.opentopodata.org/)
+// Chosen over Open-Meteo because Open-Meteo's free-tier elevation endpoint
+// aggressively rate-limits burst traffic (429 even with 4 concurrent reqs
+// and 1s delays) and the cooldown can persist for hours per IP.
+// OpenTopoData: SRTM GL1 30m worldwide, 100 locations/req, 1 req/s public
+// limit, CORS enabled, no API key.
+const ELEVATION_URL = 'https://api.opentopodata.org/v1/srtm30m'
 const ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive'
-const ELEVATION_BATCH_SIZE = 100   // Open-Meteo hard limit per request
-// Open-Meteo's free tier has an undocumented per-second burst limit that
-// trips 429 even with concurrency=4. We go fully sequential — it's the
-// only concurrency that's 100% reliable in practice. A 1024-pt grid
-// (11 batches) takes ~4-6 s, which is acceptable for a user-initiated action.
-const ELEVATION_CONCURRENCY = 1
-const ELEVATION_INTER_BATCH_DELAY_MS = 120  // small gap to stay well below their threshold
+const ELEVATION_BATCH_SIZE = 100        // OpenTopoData hard limit per request
+const ELEVATION_CONCURRENCY = 1         // sequential — OpenTopoData is strict at 1 req/s
+const ELEVATION_INTER_BATCH_DELAY_MS = 1100 // just above their 1 req/s public limit
 const RETRY_STATUSES = new Set([429, 503, 504])
-const RETRY_MAX_ATTEMPTS = 5       // 1 initial + 4 retries
+const RETRY_MAX_ATTEMPTS = 5            // 1 initial + 4 retries
 
 /** Unified error type for all network/parsing failures in this module. */
 export class TerrainApiError extends Error {
@@ -111,20 +113,44 @@ async function runWithConcurrency<T>(
   if (firstError != null) throw firstError
 }
 
-async function fetchElevationBatch(batch: LatLng[]): Promise<number[]> {
-  const lats = batch.map((p) => p.lat.toFixed(6)).join(',')
-  const lngs = batch.map((p) => p.lng.toFixed(6)).join(',')
-  const url = `${ELEVATION_URL}?latitude=${lats}&longitude=${lngs}`
+interface OpenTopoDataResult {
+  elevation: number | null
+  location: { lat: number; lng: number }
+}
+interface OpenTopoDataResponse {
+  results?: OpenTopoDataResult[]
+  status?: string
+  error?: string
+}
 
-  const data = await fetchJson<{ elevation?: number[] }>(
+/**
+ * Query OpenTopoData for a batch of elevations. Uses the pipe-separated
+ * `locations` query parameter format: "lat1,lng1|lat2,lng2|…".
+ *
+ * Response shape:
+ *   { "results": [{ "elevation": 101, "location": {…} }, …], "status": "OK" }
+ *
+ * Missing cells (over the ocean, dataset void, etc.) come back as
+ * `elevation: null` — we map those to 0 so the mesh stays continuous.
+ */
+async function fetchElevationBatch(batch: LatLng[]): Promise<number[]> {
+  const locations = batch
+    .map((p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`)
+    .join('|')
+  const url = `${ELEVATION_URL}?locations=${locations}`
+
+  const data = await fetchJson<OpenTopoDataResponse>(
     url,
-    'Pas de connexion à Open-Meteo (élévation)',
+    "Pas de connexion à OpenTopoData (élévation)",
     'élévation',
   )
-  if (!data.elevation || data.elevation.length !== batch.length) {
+  if (data.status && data.status !== 'OK') {
+    throw new TerrainApiError(`OpenTopoData élévation: ${data.error || data.status}`)
+  }
+  if (!data.results || data.results.length !== batch.length) {
     throw new TerrainApiError("Données d'élévation incomplètes")
   }
-  return data.elevation
+  return data.results.map((r) => (typeof r.elevation === 'number' ? r.elevation : 0))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
