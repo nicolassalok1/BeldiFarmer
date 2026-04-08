@@ -15,9 +15,14 @@ import type { ReliefSample } from './terrain'
 const ELEVATION_URL = 'https://api.open-meteo.com/v1/elevation'
 const ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive'
 const ELEVATION_BATCH_SIZE = 100   // Open-Meteo hard limit per request
-const ELEVATION_CONCURRENCY = 4    // max simultaneous requests (free tier burst-friendly)
+// Open-Meteo's free tier has an undocumented per-second burst limit that
+// trips 429 even with concurrency=4. We go fully sequential — it's the
+// only concurrency that's 100% reliable in practice. A 1024-pt grid
+// (11 batches) takes ~4-6 s, which is acceptable for a user-initiated action.
+const ELEVATION_CONCURRENCY = 1
+const ELEVATION_INTER_BATCH_DELAY_MS = 120  // small gap to stay well below their threshold
 const RETRY_STATUSES = new Set([429, 503, 504])
-const RETRY_MAX_ATTEMPTS = 4
+const RETRY_MAX_ATTEMPTS = 5       // 1 initial + 4 retries
 
 /** Unified error type for all network/parsing failures in this module. */
 export class TerrainApiError extends Error {
@@ -57,7 +62,10 @@ export async function fetchElevations(points: LatLng[]): Promise<ReliefSample[]>
 
   const samples: ReliefSample[] = new Array(points.length)
 
-  await runWithConcurrency(batches, ELEVATION_CONCURRENCY, async (b) => {
+  await runWithConcurrency(batches, ELEVATION_CONCURRENCY, async (b, isFirst) => {
+    // Throttle between sequential batches to stay under Open-Meteo's
+    // burst limit. Skip the delay for the very first batch.
+    if (!isFirst) await sleep(ELEVATION_INTER_BATCH_DELAY_MS)
     const elevations = await fetchElevationBatch(b.points)
     for (let k = 0; k < elevations.length; k++) {
       const p = points[b.offset + k]
@@ -69,25 +77,29 @@ export async function fetchElevations(points: LatLng[]): Promise<ReliefSample[]>
 }
 
 /**
- * Run `worker(item)` over `items` with at most `limit` promises in flight
- * at any time. Stops on the first rejection and re-throws it.
+ * Run `worker(item, isFirst)` over `items` with at most `limit` promises
+ * in flight at any time. Stops on the first rejection and re-throws it.
+ * `isFirst` lets the worker skip an initial throttle delay.
  */
 async function runWithConcurrency<T>(
   items: T[],
   limit: number,
-  worker: (item: T) => Promise<void>,
+  worker: (item: T, isFirst: boolean) => Promise<void>,
 ): Promise<void> {
   if (items.length === 0) return
   const queue = items.slice()
   let firstError: unknown = null
+  let processed = 0
   const runners: Promise<void>[] = []
   const max = Math.min(limit, queue.length)
   for (let i = 0; i < max; i++) {
     runners.push((async () => {
       while (queue.length > 0 && firstError == null) {
         const item = queue.shift()!
+        const isFirst = processed === 0
+        processed++
         try {
-          await worker(item)
+          await worker(item, isFirst)
         } catch (e) {
           if (firstError == null) firstError = e
           return
@@ -194,11 +206,12 @@ async function fetchJson<T>(url: string, offlineMsg: string, label: string): Pro
     if (!RETRY_STATUSES.has(resp.status) || attempt === RETRY_MAX_ATTEMPTS - 1) {
       throw new TerrainApiError(`Open-Meteo ${label}: HTTP ${resp.status}`)
     }
-    // Exponential backoff with jitter: 400ms, 800ms, 1600ms (+ 0-200ms).
-    // Honor Retry-After if the server provides it.
+    // Exponential backoff with jitter: 1s, 2s, 4s, 8s (+ 0-500ms).
+    // Honor Retry-After if the server provides it (in seconds or HTTP-date
+    // format — we only parse the numeric form, which Open-Meteo uses).
     const retryAfterHeader = resp.headers.get('Retry-After')
     const retryAfterMs = retryAfterHeader ? parseInt(retryAfterHeader, 10) * 1000 : 0
-    const backoff = Math.max(retryAfterMs, 400 * Math.pow(2, attempt) + Math.random() * 200)
+    const backoff = Math.max(retryAfterMs, 1000 * Math.pow(2, attempt) + Math.random() * 500)
     await sleep(backoff)
   }
   // Unreachable — the loop either returns, throws, or sleeps and retries.
