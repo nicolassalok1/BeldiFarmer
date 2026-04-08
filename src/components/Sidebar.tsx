@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { StepIndicator } from './StepIndicator'
-import { exportCSV, exportGeoJSON, exportKML, exportProject, parseProjectFile } from '../utils/exporters'
+import { exportProject, parseProjectFile } from '../utils/exporters'
 import { saveToStorage } from '../utils/persistence'
 import { calcArea } from '../utils/geometry'
 import { cacheTilesForBounds, estimateTileCount } from '../utils/offline'
@@ -11,16 +11,6 @@ export function Sidebar() {
   const store = useAppStore()
 
   const totalPoints = store.fields.reduce((s, f) => s + f.points.length, 0)
-
-  const handleExport = (type: 'csv' | 'geojson' | 'kml') => {
-    let count = 0
-    if (type === 'csv') count = exportCSV(store.fields)
-    else if (type === 'geojson') count = exportGeoJSON(store.fields, store.exploitPolygon, store.exploitArea)
-    else count = exportKML(store.fields)
-
-    if (count === 0) store.toast('⚠ Aucun point à exporter', true)
-    else store.toast(`✓ ${type.toUpperCase()} exporté — ${count} points`)
-  }
 
   const handleSave = () => {
     const ok = exportProject({
@@ -200,14 +190,9 @@ export function Sidebar() {
         </div>
       </Section>
 
-      {/* Export & Save */}
+      {/* Save / Load / Clear */}
       <Section>
-        <SectionTitle>Export & Sauvegarde</SectionTitle>
-        <div className="flex gap-1 mb-1">
-          <button className="btn-amber flex-1 text-[10px] py-1" onClick={() => handleExport('csv')}>CSV</button>
-          <button className="btn-amber flex-1 text-[10px] py-1" onClick={() => handleExport('geojson')}>GeoJSON</button>
-          <button className="btn-amber flex-1 text-[10px] py-1" onClick={() => handleExport('kml')}>KML</button>
-        </div>
+        <SectionTitle>Sauvegarde</SectionTitle>
         <div className="flex gap-1 mb-1">
           <button className="btn-cyan flex-1 text-[10px] py-1" onClick={handleSave}>↓ Sauvegarder</button>
           <button className="btn-active flex-1 text-[10px] py-1" onClick={handleLoad}>↑ Charger</button>
