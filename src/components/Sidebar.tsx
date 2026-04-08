@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { StepIndicator } from './StepIndicator'
 import { exportProject, parseProjectFile } from '../utils/exporters'
-import { saveToStorage } from '../utils/persistence'
+import { saveToStorage, buildPersistedData } from '../utils/persistence'
 import { calcArea } from '../utils/geometry'
 import { cacheTilesForBounds, estimateTileCount } from '../utils/offline'
 import type { LatLng } from '../types'
@@ -12,38 +12,14 @@ export function Sidebar() {
 
   const totalPoints = store.fields.reduce((s, f) => s + f.points.length, 0)
 
+  // Download all user data as a single JSON file.
   const handleSave = () => {
-    const ok = exportProject({
-      exploitPolygon: store.exploitPolygon,
-      exploitArea: store.exploitArea,
-      fields: store.fields.map((f) => ({
-        id: f.id, name: f.name, color: f.color, latlngs: f.latlngs,
-        area: f.area, perimeter: f.perimeter, points: f.points,
-        culture: f.culture, assignedEmployees: f.assignedEmployees,
-        assignedManager: f.assignedManager, relief: f.relief,
-        archived: f.archived, archivedAt: f.archivedAt,
-      })),
-      fieldIdCounter: store.fieldIdCounter,
-      generationMethod: store.generationMethod,
-      density: store.density,
-      employees: store.employees,
-      employeeIdCounter: store.employeeIdCounter,
-      strains: store.strains,
-      wateringLog: store.wateringLog,
-      wateringIdCounter: store.wateringIdCounter,
-      amendmentLog: store.amendmentLog,
-      amendmentIdCounter: store.amendmentIdCounter,
-      soilAnalyses: store.soilAnalyses,
-      soilAnalysisIdCounter: store.soilAnalysisIdCounter,
-      agendaTasks: store.agendaTasks,
-      agendaIdCounter: store.agendaIdCounter,
-      activities: store.activities,
-      activityIdCounter: store.activityIdCounter,
-    })
-    if (ok) store.toast('✓ Projet exporté en JSON')
-    else store.toast('⚠ Rien à exporter', true)
+    const ok = exportProject(buildPersistedData(store))
+    if (ok) store.toast('✓ Sauvegarde téléchargée')
+    else store.toast('⚠ Rien à sauvegarder', true)
   }
 
+  // Replace the entire local database with the content of an uploaded JSON file.
   const handleLoad = () => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -51,16 +27,26 @@ export function Sidebar() {
     input.onchange = () => {
       const file = input.files?.[0]
       if (!file) return
+      const hasExistingData =
+        store.exploitPolygon != null ||
+        store.fields.length > 0 ||
+        store.activities.length > 0 ||
+        store.employees.length > 0
+      if (hasExistingData && !window.confirm(
+        'Charger ce fichier va remplacer TOUTES vos données actuelles\n' +
+        '(zones, points, activités, employés, historiques…).\n\nContinuer ?'
+      )) return
+
       const reader = new FileReader()
       reader.onload = () => {
         const data = parseProjectFile(reader.result as string)
         if (!data) { store.toast('⚠ Fichier invalide', true); return }
-        if (store.exploitLayer) { store.exploitLayer.remove(); store.exploitLabel?.remove() }
-        store.fields.forEach((f) => { f.layer?.remove(); f.labelMarker?.remove(); f.pointMarkers.forEach((m) => m.remove()) })
-        store.clearAll()
+        // Write the uploaded snapshot to localStorage and reload.
+        // The reload handles layer teardown and full re-hydration from the new data.
         saveToStorage(data)
         window.location.reload()
       }
+      reader.onerror = () => store.toast('⚠ Impossible de lire le fichier', true)
       reader.readAsText(file)
     }
     input.click()

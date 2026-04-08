@@ -48,6 +48,76 @@ export function saveToStorage(data: PersistedData): void {
 }
 
 /**
+ * Build a PersistedData snapshot from the current AppState.
+ * Single source of truth for what "all user data" means — used by both
+ * automatic localStorage persistence and the manual JSON export/save button.
+ * If you add a new persistable field, add it here and nowhere else.
+ */
+export function buildPersistedData(state: {
+  exploitPolygon: LatLng[] | null
+  exploitArea: number
+  fields: Array<{
+    id: number; name: string; color: string; latlngs: LatLng[]
+    area: number; perimeter: number; points: SamplingPoint[]
+    culture?: CultureInfo
+    assignedEmployees: number[]
+    assignedManager: number | null
+    relief?: ReliefInfo
+    archived?: boolean
+    archivedAt?: string
+    archivedVisible?: boolean
+  }>
+  fieldIdCounter: number
+  generationMethod: string
+  density: number
+  employees: Employee[]
+  employeeIdCounter: number
+  strains: string[]
+  wateringLog: WateringEntry[]
+  wateringIdCounter: number
+  amendmentLog: AmendmentEntry[]
+  amendmentIdCounter: number
+  soilAnalyses: SoilAnalysis[]
+  soilAnalysisIdCounter: number
+  agendaTasks: AgendaTask[]
+  agendaIdCounter: number
+  activities: Activity[]
+  activityIdCounter: number
+}): PersistedData {
+  return {
+    exploitPolygon: state.exploitPolygon,
+    exploitArea: state.exploitArea,
+    fields: state.fields.map((f) => ({
+      id: f.id, name: f.name, color: f.color, latlngs: f.latlngs,
+      area: f.area, perimeter: f.perimeter, points: f.points,
+      culture: f.culture,
+      assignedEmployees: f.assignedEmployees,
+      assignedManager: f.assignedManager,
+      relief: f.relief,
+      archived: f.archived,
+      archivedAt: f.archivedAt,
+      archivedVisible: f.archivedVisible,
+    })),
+    fieldIdCounter: state.fieldIdCounter,
+    generationMethod: state.generationMethod,
+    density: state.density,
+    employees: state.employees,
+    employeeIdCounter: state.employeeIdCounter,
+    strains: state.strains,
+    wateringLog: state.wateringLog,
+    wateringIdCounter: state.wateringIdCounter,
+    amendmentLog: state.amendmentLog,
+    amendmentIdCounter: state.amendmentIdCounter,
+    soilAnalyses: state.soilAnalyses,
+    soilAnalysisIdCounter: state.soilAnalysisIdCounter,
+    agendaTasks: state.agendaTasks,
+    agendaIdCounter: state.agendaIdCounter,
+    activities: state.activities,
+    activityIdCounter: state.activityIdCounter,
+  }
+}
+
+/**
  * Apply defaults to a loaded PersistedData so all required fields are present.
  * Handles forward/backward compat for older JSON files that predate newer features
  * (activities, agendaTasks, archived zones, etc.).

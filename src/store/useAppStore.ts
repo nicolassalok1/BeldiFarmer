@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { AppState } from '../types'
-import { saveToStorage } from '../utils/persistence'
+import { saveToStorage, buildPersistedData } from '../utils/persistence'
 
 export const FIELD_COLORS = [
   '#8fa84f', '#e6a817', '#a84f6a', '#4f6aa8', '#a8854f',
@@ -8,34 +8,7 @@ export const FIELD_COLORS = [
 ]
 
 function persist(state: AppState) {
-  saveToStorage({
-    exploitPolygon: state.exploitPolygon,
-    exploitArea: state.exploitArea,
-    fields: state.fields.map((f) => ({
-      id: f.id, name: f.name, color: f.color, latlngs: f.latlngs,
-      area: f.area, perimeter: f.perimeter, points: f.points,
-      culture: f.culture, assignedEmployees: f.assignedEmployees,
-      assignedManager: f.assignedManager, relief: f.relief,
-      archived: f.archived, archivedAt: f.archivedAt,
-      archivedVisible: f.archivedVisible,
-    })),
-    fieldIdCounter: state.fieldIdCounter,
-    generationMethod: state.generationMethod,
-    density: state.density,
-    employees: state.employees,
-    employeeIdCounter: state.employeeIdCounter,
-    strains: state.strains,
-    wateringLog: state.wateringLog,
-    wateringIdCounter: state.wateringIdCounter,
-    amendmentLog: state.amendmentLog,
-    amendmentIdCounter: state.amendmentIdCounter,
-    soilAnalyses: state.soilAnalyses,
-    soilAnalysisIdCounter: state.soilAnalysisIdCounter,
-    agendaTasks: state.agendaTasks,
-    agendaIdCounter: state.agendaIdCounter,
-    activities: state.activities,
-    activityIdCounter: state.activityIdCounter,
-  })
+  saveToStorage(buildPersistedData(state))
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
