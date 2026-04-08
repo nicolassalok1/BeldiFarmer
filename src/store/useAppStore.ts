@@ -16,6 +16,7 @@ function persist(state: AppState) {
       area: f.area, perimeter: f.perimeter, points: f.points,
       culture: f.culture, assignedEmployees: f.assignedEmployees,
       assignedManager: f.assignedManager, relief: f.relief,
+      archived: f.archived, archivedAt: f.archivedAt,
     })),
     fieldIdCounter: state.fieldIdCounter,
     generationMethod: state.generationMethod,
@@ -29,6 +30,10 @@ function persist(state: AppState) {
     amendmentIdCounter: state.amendmentIdCounter,
     soilAnalyses: state.soilAnalyses,
     soilAnalysisIdCounter: state.soilAnalysisIdCounter,
+    agendaTasks: state.agendaTasks,
+    agendaIdCounter: state.agendaIdCounter,
+    activities: state.activities,
+    activityIdCounter: state.activityIdCounter,
   })
 }
 
@@ -40,9 +45,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   wateringLog: [], wateringIdCounter: 0,
   amendmentLog: [], amendmentIdCounter: 0,
   soilAnalyses: [], soilAnalysisIdCounter: 0,
+  agendaTasks: [], agendaIdCounter: 0,
+  activities: [], activityIdCounter: 0,
   currentStep: 1, toastMessage: null, toastError: false,
   statusText: 'EN ATTENTE', helpOpen: false, dashboardOpen: false, dashboardTab: 'overview',
   fieldDetailOpen: false, fieldDetailTab: 'info',
+  calendarOpen: false, activityFormOpen: false, activityFormDate: null, activityFormEditId: null,
 
   // ── Exploitation ──
   setExploitation: (polygon, area, layer, label) => {
@@ -75,6 +83,35 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({ fields: s.fields.map((f) => f.id === fieldId ? { ...f, points, pointMarkers: markers } : f) }))
     persist(get())
   },
+  archiveField: (id, reassignments) => {
+    set((s) => {
+      // Reassign activities before archiving (activities are duplicated on target fields,
+      // original stays on archived zone)
+      let activities = s.activities
+      if (reassignments && reassignments.length) {
+        activities = s.activities.map((a) => {
+          const reassign = reassignments.find((r) => r.activityId === a.id)
+          if (!reassign) return a
+          const merged = Array.from(new Set([...a.fieldIds, ...reassign.targetFieldIds]))
+          return { ...a, fieldIds: merged }
+        })
+      }
+      return {
+        activities,
+        fields: s.fields.map((f) => f.id === id ? { ...f, archived: true, archivedAt: new Date().toISOString() } : f),
+        selectedFieldId: s.selectedFieldId === id ? null : s.selectedFieldId,
+      }
+    })
+    persist(get())
+  },
+  unarchiveField: (id) => {
+    set((s) => ({ fields: s.fields.map((f) => f.id === id ? { ...f, archived: false, archivedAt: undefined } : f) }))
+    persist(get())
+  },
+  setArchivedFieldVisible: (id, visible) => {
+    set((s) => ({ fields: s.fields.map((f) => f.id === id ? { ...f, archivedVisible: visible } : f) }))
+  },
+
   removePoint: (fieldId, pointIndex) => {
     set((s) => ({
       fields: s.fields.map((f) => {
@@ -164,6 +201,43 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   removeSoilAnalysis: (id) => { set((s) => ({ soilAnalyses: s.soilAnalyses.filter((a) => a.id !== id) })); persist(get()) },
 
+  // ── Agenda ──
+  addAgendaTask: (task) => {
+    set((s) => ({
+      agendaTasks: [...s.agendaTasks, { ...task, id: s.agendaIdCounter + 1, createdAt: new Date().toISOString() }],
+      agendaIdCounter: s.agendaIdCounter + 1,
+    }))
+    persist(get())
+  },
+  updateAgendaTask: (id, updates) => {
+    set((s) => ({ agendaTasks: s.agendaTasks.map((t) => t.id === id ? { ...t, ...updates } : t) }))
+    persist(get())
+  },
+  removeAgendaTask: (id) => {
+    set((s) => ({ agendaTasks: s.agendaTasks.filter((t) => t.id !== id) }))
+    persist(get())
+  },
+
+  // ── Activities ──
+  addActivity: (activity) => {
+    const s = get()
+    const newId = s.activityIdCounter + 1
+    set({
+      activities: [...s.activities, { ...activity, id: newId, createdAt: new Date().toISOString() }],
+      activityIdCounter: newId,
+    })
+    persist(get())
+    return newId
+  },
+  updateActivity: (id, updates) => {
+    set((s) => ({ activities: s.activities.map((a) => a.id === id ? { ...a, ...updates } : a) }))
+    persist(get())
+  },
+  removeActivity: (id) => {
+    set((s) => ({ activities: s.activities.filter((a) => a.id !== id) }))
+    persist(get())
+  },
+
   // ── UI ──
   toast: (message, error = false) => set({ toastMessage: message, toastError: error }),
   clearToast: () => set({ toastMessage: null, toastError: false }),
@@ -174,12 +248,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   openFieldDetail: (fieldId, tab = 'info') => set({ selectedFieldId: fieldId, fieldDetailOpen: true, fieldDetailTab: tab }),
   closeFieldDetail: () => set({ fieldDetailOpen: false }),
   setFieldDetailTab: (tab) => set({ fieldDetailTab: tab }),
+  setCalendarOpen: (open) => set({ calendarOpen: open }),
+  openActivityForm: (date = null, editId = null) => set({ activityFormOpen: true, activityFormDate: date, activityFormEditId: editId }),
+  closeActivityForm: () => set({ activityFormOpen: false, activityFormDate: null, activityFormEditId: null }),
   clearAll: () => {
     set((s) => ({
       exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,
       fields: [], fieldIdCounter: 0, selectedFieldId: null,
       drawTarget: null, currentStep: 1, statusText: 'EN ATTENTE',
-      wateringLog: [], amendmentLog: [], soilAnalyses: [],
+      wateringLog: [], amendmentLog: [], soilAnalyses: [], agendaTasks: [], activities: [],
+      activityIdCounter: 0,
       employees: s.employees, employeeIdCounter: s.employeeIdCounter, strains: s.strains,
     }))
     persist(get())

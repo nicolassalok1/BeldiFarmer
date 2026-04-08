@@ -1,4 +1,4 @@
-import type { LatLng, SamplingPoint, CultureInfo, Employee, WateringEntry, AmendmentEntry, SoilAnalysis, ReliefInfo } from '../types'
+import type { LatLng, SamplingPoint, CultureInfo, Employee, WateringEntry, AmendmentEntry, SoilAnalysis, ReliefInfo, AgendaTask, Activity } from '../types'
 
 const STORAGE_KEY = 'anrac-prelevements-v2'
 
@@ -14,6 +14,8 @@ export interface PersistedField {
   assignedEmployees: number[]
   assignedManager: number | null
   relief?: ReliefInfo
+  archived?: boolean
+  archivedAt?: string
 }
 
 export interface PersistedData {
@@ -32,6 +34,10 @@ export interface PersistedData {
   amendmentIdCounter: number
   soilAnalyses: SoilAnalysis[]
   soilAnalysisIdCounter: number
+  agendaTasks?: AgendaTask[]
+  agendaIdCounter?: number
+  activities?: Activity[]
+  activityIdCounter?: number
 }
 
 export function saveToStorage(data: PersistedData): void {
@@ -55,9 +61,14 @@ export function loadFromStorage(): PersistedData | null {
     data.amendmentIdCounter ??= 0
     data.soilAnalyses ??= []
     data.soilAnalysisIdCounter ??= 0
+    data.agendaTasks ??= []
+    data.agendaIdCounter ??= 0
+    data.activities ??= []
+    data.activityIdCounter ??= 0
     data.fields?.forEach((f) => {
       f.assignedEmployees ??= []
       f.assignedManager ??= null
+      f.archived ??= false
     })
     return data
   } catch {

@@ -9,6 +9,7 @@ export interface SamplingPoint {
   label: string
   lat: number
   lng: number
+  notes?: string
 }
 
 // ── Cultures ──
@@ -72,6 +73,40 @@ export interface SoilAnalysis {
   notes?: string
 }
 
+// ── Activités (unifiées) ──
+
+export type ActivityType = 'watering' | 'amendment' | 'other'
+
+export interface Activity {
+  id: number
+  date: string                 // ISO YYYY-MM-DD
+  type: ActivityType
+  fieldIds: number[]           // zones concernées
+  workerCount: number          // nombre d'ouvriers ayant effectué l'activité
+  notes?: string
+  // données type-spécifiques
+  watering?: { method: IrrigationMethod; durationMin: number; volumeL?: number }
+  amendment?: { type: AmendmentType; product: string; quantityKg: number }
+  other?: { title: string }
+  createdAt: string
+}
+
+// ── Agenda / Tâches ──
+
+export type AgendaStatus = 'planifiee' | 'realisee' | 'annulee'
+
+export interface AgendaTask {
+  id: number
+  date: string             // ISO date (YYYY-MM-DD) — jour de réalisation / planifié
+  title: string
+  notes?: string
+  fieldIds: number[]       // champs concernés
+  workerIds: number[]      // ouvriers (role='employe')
+  managerIds: number[]     // responsables (role='responsable')
+  status: AgendaStatus
+  createdAt: string        // ISO datetime
+}
+
 // ── Relief / Exposition ──
 
 export type Exposition = 'nord' | 'nord-est' | 'est' | 'sud-est' | 'sud' | 'sud-ouest' | 'ouest' | 'nord-ouest' | 'plat'
@@ -98,17 +133,20 @@ export interface Field {
   assignedEmployees: number[]
   assignedManager: number | null
   relief?: ReliefInfo
+  archived?: boolean
+  archivedAt?: string
   // Leaflet layers (runtime only)
   layer?: L.Polygon
   labelMarker?: L.Marker
   pointMarkers: L.Marker[]
+  archivedVisible?: boolean   // runtime: show archived zone on map
 }
 
 export type DrawTarget = 'exploit' | 'field' | null
 export type EditTarget = { type: 'exploit' } | { type: 'field'; fieldId: number } | null
 export type GenerationMethod = 'grid' | 'zigzag' | 'random'
 
-export type DashboardTab = 'overview' | 'cultures' | 'personnel' | 'watering' | 'amendments' | 'soil' | 'relief'
+export type DashboardTab = 'overview' | 'cultures' | 'personnel' | 'agenda' | 'watering' | 'amendments' | 'soil' | 'relief'
 export type FieldDetailTab = 'info' | 'culture' | 'personnel' | 'watering' | 'amendments' | 'soil' | 'relief'
 
 export interface AppState {
@@ -146,6 +184,10 @@ export interface AppState {
   amendmentIdCounter: number
   soilAnalyses: SoilAnalysis[]
   soilAnalysisIdCounter: number
+  agendaTasks: AgendaTask[]
+  agendaIdCounter: number
+  activities: Activity[]
+  activityIdCounter: number
 
   // UI
   currentStep: number
@@ -157,6 +199,10 @@ export interface AppState {
   dashboardTab: DashboardTab
   fieldDetailOpen: boolean
   fieldDetailTab: FieldDetailTab
+  calendarOpen: boolean
+  activityFormOpen: boolean
+  activityFormDate: string | null
+  activityFormEditId: number | null
 
   // ── Actions ──
 
@@ -171,6 +217,9 @@ export interface AppState {
   updateField: (id: number, updates: Partial<Pick<Field, 'name' | 'culture' | 'assignedEmployees' | 'assignedManager' | 'relief'>>) => void
   setFieldPoints: (fieldId: number, points: SamplingPoint[], markers: L.Marker[]) => void
   removePoint: (fieldId: number, pointIndex: number) => void
+  archiveField: (id: number, reassignments?: { activityId: number; targetFieldIds: number[] }[]) => void
+  unarchiveField: (id: number) => void
+  setArchivedFieldVisible: (id: number, visible: boolean) => void
 
   // Drawing
   setDrawTarget: (target: DrawTarget) => void
@@ -204,6 +253,16 @@ export interface AppState {
   addSoilAnalysis: (entry: Omit<SoilAnalysis, 'id'>) => void
   removeSoilAnalysis: (id: number) => void
 
+  // Agenda
+  addAgendaTask: (task: Omit<AgendaTask, 'id' | 'createdAt'>) => void
+  updateAgendaTask: (id: number, updates: Partial<Omit<AgendaTask, 'id' | 'createdAt'>>) => void
+  removeAgendaTask: (id: number) => void
+
+  // Activities
+  addActivity: (activity: Omit<Activity, 'id' | 'createdAt'>) => number
+  updateActivity: (id: number, updates: Partial<Omit<Activity, 'id' | 'createdAt'>>) => void
+  removeActivity: (id: number) => void
+
   // UI
   toast: (message: string, error?: boolean) => void
   clearToast: () => void
@@ -214,5 +273,8 @@ export interface AppState {
   openFieldDetail: (fieldId: number, tab?: FieldDetailTab) => void
   closeFieldDetail: () => void
   setFieldDetailTab: (tab: FieldDetailTab) => void
+  setCalendarOpen: (open: boolean) => void
+  openActivityForm: (date?: string | null, editId?: number | null) => void
+  closeActivityForm: () => void
   clearAll: () => void
 }

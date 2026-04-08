@@ -6,6 +6,8 @@ import { Toast } from './components/Toast'
 import { HelpModal } from './components/HelpModal'
 import { Dashboard } from './components/Dashboard'
 import { FieldDetailPanel } from './components/FieldDetailPanel'
+import { CalendarPanel } from './components/CalendarPanel'
+import { ActivityForm } from './components/ActivityForm'
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
       <HelpModal />
       <Dashboard />
       <FieldDetailPanel />
+      <CalendarPanel />
+      <ActivityForm />
     </div>
   )
 }
