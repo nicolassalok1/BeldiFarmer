@@ -12,7 +12,6 @@ export function FieldList() {
   const selectedFieldId = useAppStore((s) => s.selectedFieldId)
   const selectField = useAppStore((s) => s.selectField)
   const exploitPolygon = useAppStore((s) => s.exploitPolygon)
-  const employees = useAppStore((s) => s.employees)
 
   if (!fields.length) {
     return (
@@ -30,7 +29,7 @@ export function FieldList() {
     <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-bg">
       {fields.map((f) => (
         <div key={f.id}>
-          <FieldCard field={f} isSelected={f.id === selectedFieldId} onSelect={() => selectField(f.id)} employees={employees} />
+          <FieldCard field={f} isSelected={f.id === selectedFieldId} onSelect={() => selectField(f.id)} />
           {f.points.map((pt, i) => (
             <PointRow key={`${f.id}-${i}`} field={f} point={pt} index={i} />
           ))}
@@ -40,8 +39,8 @@ export function FieldList() {
   )
 }
 
-function FieldCard({ field: f, isSelected, onSelect, employees }: {
-  field: Field; isSelected: boolean; onSelect: () => void; employees: { id: number; name: string; role: string }[]
+function FieldCard({ field: f, isSelected, onSelect }: {
+  field: Field; isSelected: boolean; onSelect: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(f.name)
@@ -143,7 +142,7 @@ function FieldCard({ field: f, isSelected, onSelect, employees }: {
       <div className="font-mono text-[10px] text-muted leading-relaxed">
         {f.area.toFixed(2)} ha · {Math.round(f.perimeter)} m
       </div>
-      <FieldMeta field={f} employees={employees} />
+      <FieldMeta field={f} />
       {addingPointHere && <AddPointInputs fieldId={f.id} />}
       <div className="flex gap-1 mt-1.5 flex-wrap">
         {isEditingThis ? (
@@ -309,16 +308,21 @@ function AddPointInputs({ fieldId }: { fieldId: number }) {
   )
 }
 
-function FieldMeta({ field, employees }: { field: Field; employees: { id: number; name: string; role: string }[] }) {
+function FieldMeta({ field }: { field: Field }) {
   const culture = field.culture
-  const manager = field.assignedManager ? employees.find((e) => e.id === field.assignedManager) : null
-  const assigned = field.assignedEmployees.map((eid) => employees.find((e) => e.id === eid)).filter(Boolean)
-  const waterCount = useAppStore((s) => s.wateringLog.filter((w) => w.fieldId === field.id).length)
-  const amendCount = useAppStore((s) => s.amendmentLog.filter((a) => a.fieldId === field.id).length)
+  const waterCount = useAppStore((s) =>
+    s.wateringLog.filter((w) => w.fieldId === field.id).length
+    + s.activities.filter((a) => a.type === 'watering' && a.fieldIds.includes(field.id)).length
+  )
+  const amendCount = useAppStore((s) =>
+    s.amendmentLog.filter((a) => a.fieldId === field.id).length
+    + s.activities.filter((a) => a.type === 'amendment' && a.fieldIds.includes(field.id)).length
+  )
+  const otherCount = useAppStore((s) => s.activities.filter((a) => a.type === 'other' && a.fieldIds.includes(field.id)).length)
   const soilCount = useAppStore((s) => s.soilAnalyses.filter((a) => a.fieldId === field.id).length)
   const relief = field.relief
 
-  const hasInfo = culture || manager || assigned.length || waterCount || amendCount || soilCount || relief
+  const hasInfo = culture || waterCount || amendCount || otherCount || soilCount || relief
   if (!hasInfo) return null
 
   return (
@@ -329,13 +333,12 @@ function FieldMeta({ field, employees }: { field: Field; employees: { id: number
           {culture.seedType === 'beldia' ? 'Beldia' : `Cali${culture.strain ? ' — ' + culture.strain : ''}`}
         </div>
       )}
-      {manager && <div><span className="text-amber">Resp:</span> {manager.name}</div>}
-      {assigned.length > 0 && <div><span className="text-olive-lit">Équipe:</span> {assigned.map((e) => e!.name).join(', ')}</div>}
       {relief && <div><span className="text-cyan">Expo:</span> {relief.exposition}{relief.sunlightHours ? ` · ${relief.sunlightHours}h soleil` : ''}</div>}
-      {(waterCount > 0 || amendCount > 0 || soilCount > 0) && (
-        <div className="flex gap-2 mt-0.5">
+      {(waterCount > 0 || amendCount > 0 || otherCount > 0 || soilCount > 0) && (
+        <div className="flex gap-2 mt-0.5 flex-wrap">
           {waterCount > 0 && <span className="text-cyan">{waterCount} arrosage{waterCount > 1 ? 's' : ''}</span>}
-          {amendCount > 0 && <span className="text-olive-lit">{amendCount} amend.</span>}
+          {amendCount > 0 && <span className="text-olive-lit">{amendCount} engrais</span>}
+          {otherCount > 0 && <span className="text-amber">{otherCount} autre{otherCount > 1 ? 's' : ''}</span>}
           {soilCount > 0 && <span className="text-amber">{soilCount} analyse{soilCount > 1 ? 's' : ''}</span>}
         </div>
       )}

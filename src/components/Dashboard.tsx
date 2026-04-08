@@ -243,7 +243,7 @@ function PersonnelTab() {
 
   return (
     <>
-      <TabHeader title="Personnel" subtitle="Gérer les employés et responsables, les assigner aux champs" />
+      <TabHeader title="Personnel" subtitle="Gérer les employés et responsables. Le nombre d'ouvriers est saisi par activité depuis l'agenda." />
 
       {/* Add form */}
       <div className="bg-bg border border-border p-4 mb-5">
@@ -283,39 +283,6 @@ function PersonnelTab() {
         </div>
       </div>
 
-      {/* Assignment */}
-      {store.fields.length > 0 && store.employees.length > 0 && (
-        <>
-          <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase mb-3 border-t border-border pt-4">Assignation par champ</div>
-          <div className="space-y-2">
-            {store.fields.map((f) => (
-              <div key={f.id} className="bg-bg border border-border p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: f.color }} />
-                  <span className="font-mono text-xs text-text font-bold flex-1">{f.name}</span>
-                </div>
-                <div className="flex gap-2 mb-2">
-                  <label className="text-[10px] text-muted min-w-[70px] pt-1">Resp.</label>
-                  <select value={f.assignedManager || ''} onChange={(e) => store.updateField(f.id, { assignedManager: e.target.value ? parseInt(e.target.value) : null })}
-                    className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1 px-2 outline-none focus:border-olive-lit">
-                    <option value="">— Aucun —</option>
-                    {managers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
-                </div>
-                {workers.length > 0 && (
-                  <div className="flex gap-1 flex-wrap">
-                    {workers.map((w) => {
-                      const on = f.assignedEmployees.includes(w.id)
-                      return <button key={w.id} onClick={() => store.updateField(f.id, { assignedEmployees: on ? f.assignedEmployees.filter((x) => x !== w.id) : [...f.assignedEmployees, w.id] })}
-                        className={`font-mono text-[10px] px-2 py-0.5 border cursor-pointer transition-all ${on ? 'bg-olive border-olive-lit text-white' : 'bg-transparent border-border text-muted hover:border-olive hover:text-olive-lit'}`}>{w.name}</button>
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </>
   )
 }

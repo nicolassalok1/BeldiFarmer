@@ -6,7 +6,6 @@ import type { FieldDetailTab, SeedType, IrrigationMethod, AmendmentType, Exposit
 const TABS: { key: FieldDetailTab; label: string }[] = [
   { key: 'info', label: 'Infos' },
   { key: 'culture', label: 'Culture' },
-  { key: 'personnel', label: 'Équipe' },
   { key: 'watering', label: 'Arrosage' },
   { key: 'amendments', label: 'Engrais' },
   { key: 'other', label: 'Autres' },
@@ -57,7 +56,6 @@ export function FieldDetailPanel() {
         <div className="flex-1 overflow-y-auto p-5">
           {tab === 'info' && <InfoTab />}
           {tab === 'culture' && <CultureTab />}
-          {tab === 'personnel' && <PersonnelTab />}
           {tab === 'watering' && <WateringTab />}
           {tab === 'amendments' && <AmendmentsTab />}
           {tab === 'other' && <OtherActivitiesTab />}
@@ -117,8 +115,6 @@ function InfoTab() {
   )
   const otherCount = useAppStore((s) => s.activities.filter((a) => a.type === 'other' && a.fieldIds.includes(field.id)).length)
   const soilCount = useAppStore((s) => s.soilAnalyses.filter((a) => a.fieldId === field.id).length)
-  const employees = useAppStore((s) => s.employees)
-  const manager = field.assignedManager ? employees.find((e) => e.id === field.assignedManager) : null
 
   return (
     <div className="space-y-4">
@@ -152,8 +148,6 @@ function InfoTab() {
       <div className="border border-border p-3">
         <Label>Résumé</Label>
         <div className="font-mono text-xs text-muted space-y-1 mt-1">
-          <div>Responsable : <span className="text-amber">{manager?.name || '—'}</span></div>
-          <div>Employés : <span className="text-text">{field.assignedEmployees.length}</span></div>
           <div>Arrosages : <span className="text-cyan">{waterCount}</span></div>
           <div>Amendements : <span className="text-olive-lit">{amendCount}</span></div>
           <div>Autres activités : <span className="text-amber">{otherCount}</span></div>
@@ -206,52 +200,6 @@ function CultureTab() {
             {strains.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           {!strains.length && <p className="text-[10px] text-muted mt-1">Ajoutez des strains dans le Dashboard → Cultures</p>}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════
-//  PERSONNEL
-// ═══════════════════════════════════════
-
-function PersonnelTab() {
-  const field = useField()
-  const updateField = useAppStore((s) => s.updateField)
-  const employees = useAppStore((s) => s.employees)
-  const managers = employees.filter((e) => e.role === 'responsable')
-  const workers = employees.filter((e) => e.role === 'employe')
-
-  if (!employees.length) return <Empty text="Aucun personnel enregistré.\nAjoutez-en dans le Dashboard → Personnel" />
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <Label>Responsable</Label>
-        <select value={field.assignedManager || ''}
-          onChange={(e) => updateField(field.id, { assignedManager: e.target.value ? parseInt(e.target.value) : null })}
-          className="w-full font-mono text-xs bg-bg border border-border text-text py-2 px-3 outline-none focus:border-olive-lit">
-          <option value="">— Aucun —</option>
-          {managers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-        </select>
-      </div>
-      {workers.length > 0 && (
-        <div>
-          <Label>Employés assignés</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {workers.map((w) => {
-              const on = field.assignedEmployees.includes(w.id)
-              return (
-                <button key={w.id}
-                  onClick={() => updateField(field.id, { assignedEmployees: on ? field.assignedEmployees.filter((x) => x !== w.id) : [...field.assignedEmployees, w.id] })}
-                  className={`font-mono text-[11px] px-2.5 py-1 border cursor-pointer transition-all
-                    ${on ? 'bg-olive border-olive-lit text-white' : 'bg-transparent border-border text-muted hover:border-olive hover:text-olive-lit'}`}>
-                  {w.name}
-                </button>
-              )
-            })}
-          </div>
         </div>
       )}
     </div>

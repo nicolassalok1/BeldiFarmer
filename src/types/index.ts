@@ -173,7 +173,7 @@ export type EditTarget = { type: 'exploit' } | { type: 'field'; fieldId: number 
 export type GenerationMethod = 'grid' | 'zigzag' | 'random'
 
 export type DashboardTab = 'overview' | 'cultures' | 'personnel' | 'agenda' | 'watering' | 'amendments' | 'soil' | 'relief'
-export type FieldDetailTab = 'info' | 'culture' | 'personnel' | 'watering' | 'amendments' | 'other' | 'soil' | 'relief'
+export type FieldDetailTab = 'info' | 'culture' | 'watering' | 'amendments' | 'other' | 'soil' | 'relief'
 
 export interface AppState {
   // Exploitation
@@ -247,7 +247,7 @@ export interface AppState {
   addField: (field: Field) => void
   removeField: (id: number) => void
   selectField: (id: number | null) => void
-  updateField: (id: number, updates: Partial<Pick<Field, 'name' | 'culture' | 'assignedEmployees' | 'assignedManager' | 'relief'>>) => void
+  updateField: (id: number, updates: Partial<Pick<Field, 'name' | 'culture' | 'relief'>>) => void
   setFieldPoints: (fieldId: number, points: SamplingPoint[], markers: L.Marker[]) => void
   removePoint: (fieldId: number, pointIndex: number) => void
   archiveField: (id: number, reassignments?: { activityId: number; targetFieldIds: number[] }[]) => void
