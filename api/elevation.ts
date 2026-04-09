@@ -19,8 +19,25 @@
 interface LatLng { lat: number; lng: number }
 interface ElevationBody { locations?: unknown }
 
-const UPSTREAM_URL = 'https://api.open-meteo.com/v1/elevation'
 const MAX_LOCATIONS = 100
+
+/**
+ * Ordered fallback chain of elevation upstreams. All deliver SRTM 30m GL1,
+ * just from different hosting infrastructures — if one is rate-limited or
+ * down, the next picks up.
+ *
+ *   1. Open-Elevation   — community service, no docs rate limit, POST JSON
+ *   2. OpenTopoData     — Cloudflare-backed, strict 1 req/s, GET pipe
+ *   3. Open-Meteo       — strict per-IP burst limiter, last resort
+ */
+const UPSTREAMS: Array<{
+  name: string
+  fetch: (locs: LatLng[]) => Promise<number[]>
+}> = [
+  { name: 'open-elevation', fetch: fetchFromOpenElevation },
+  { name: 'opentopodata', fetch: fetchFromOpenTopoData },
+  { name: 'open-meteo', fetch: fetchFromOpenMeteo },
+]
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
@@ -42,40 +59,79 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: `max ${MAX_LOCATIONS} locations per request` }, 400)
   }
 
+  // Try each upstream in order. Collect failures for diagnostics.
+  const failures: string[] = []
+  for (const upstream of UPSTREAMS) {
+    try {
+      const elevations = await upstream.fetch(locations)
+      if (elevations.length !== locations.length) {
+        failures.push(`${upstream.name}: length mismatch`)
+        continue
+      }
+      return new Response(JSON.stringify({ elevations, source: upstream.name }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          // SRTM is static — cache aggressively at the Vercel edge.
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      })
+    } catch (e) {
+      failures.push(`${upstream.name}: ${e instanceof Error ? e.message : 'unknown'}`)
+    }
+  }
+
+  return json(
+    { error: 'all upstream elevation providers failed', failures },
+    502,
+  )
+}
+
+// ── Upstream adapters ────────────────────────────────────────────────
+
+async function fetchFromOpenElevation(locations: LatLng[]): Promise<number[]> {
+  const resp = await fetch('https://api.open-elevation.com/api/v1/lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      locations: locations.map((p) => ({ latitude: p.lat, longitude: p.lng })),
+    }),
+  })
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  const data = (await resp.json()) as {
+    results?: Array<{ elevation?: number | null }>
+  }
+  if (!Array.isArray(data.results)) throw new Error('missing results')
+  return data.results.map((r) => (typeof r.elevation === 'number' ? r.elevation : 0))
+}
+
+async function fetchFromOpenTopoData(locations: LatLng[]): Promise<number[]> {
+  const pipe = locations
+    .map((p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`)
+    .join('|')
+  const resp = await fetch(
+    `https://api.opentopodata.org/v1/srtm30m?locations=${pipe}`,
+  )
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  const data = (await resp.json()) as {
+    results?: Array<{ elevation?: number | null }>
+    status?: string
+  }
+  if (data.status && data.status !== 'OK') throw new Error(data.status)
+  if (!Array.isArray(data.results)) throw new Error('missing results')
+  return data.results.map((r) => (typeof r.elevation === 'number' ? r.elevation : 0))
+}
+
+async function fetchFromOpenMeteo(locations: LatLng[]): Promise<number[]> {
   const lats = locations.map((p) => p.lat.toFixed(6)).join(',')
   const lngs = locations.map((p) => p.lng.toFixed(6)).join(',')
-  const url = `${UPSTREAM_URL}?latitude=${lats}&longitude=${lngs}`
-
-  let resp: Response
-  try {
-    resp = await fetch(url)
-  } catch {
-    return json({ error: 'upstream fetch failed' }, 502)
-  }
-  if (!resp.ok) {
-    return json({ error: `upstream HTTP ${resp.status}` }, resp.status >= 500 ? 502 : resp.status)
-  }
-
-  let data: { elevation?: number[] }
-  try {
-    data = (await resp.json()) as { elevation?: number[] }
-  } catch {
-    return json({ error: 'upstream returned invalid JSON' }, 502)
-  }
-  if (!Array.isArray(data.elevation) || data.elevation.length !== locations.length) {
-    return json({ error: 'upstream returned incomplete elevation data' }, 502)
-  }
-
-  return new Response(JSON.stringify({ elevations: data.elevation }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      // SRTM is static — cache aggressively at the Vercel edge. A full day
-      // of shared cache + a week of stale-while-revalidate keeps things
-      // snappy even for repeated lookups on the same field.
-      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
-    },
-  })
+  const resp = await fetch(
+    `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`,
+  )
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  const data = (await resp.json()) as { elevation?: number[] }
+  if (!Array.isArray(data.elevation)) throw new Error('missing elevation array')
+  return data.elevation
 }
 
 function sanitizeLocations(input: unknown): LatLng[] | null {

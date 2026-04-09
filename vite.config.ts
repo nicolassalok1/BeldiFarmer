@@ -39,30 +39,66 @@ function elevationProxyPlugin(): Plugin {
             sendJson(res, 400, { error: 'max 100 locations per request' })
             return
           }
-          const lats = locations.map((p) => p.lat.toFixed(6)).join(',')
-          const lngs = locations.map((p) => p.lng.toFixed(6)).join(',')
-          const url = `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`
-          try {
-            const resp = await fetch(url)
-            if (!resp.ok) {
-              sendJson(res, resp.status >= 500 ? 502 : resp.status, {
-                error: `upstream HTTP ${resp.status}`,
-              })
+
+          // Ordered fallback chain — same as the Vercel serverless function.
+          const upstreams: Array<{ name: string; fetch: (locs: LatLng[]) => Promise<number[]> }> = [
+            { name: 'open-elevation', fetch: fetchFromOpenElevation },
+            { name: 'opentopodata', fetch: fetchFromOpenTopoData },
+            { name: 'open-meteo', fetch: fetchFromOpenMeteo },
+          ]
+          const failures: string[] = []
+          for (const upstream of upstreams) {
+            try {
+              const elevations = await upstream.fetch(locations)
+              if (elevations.length !== locations.length) {
+                failures.push(`${upstream.name}: length mismatch`)
+                continue
+              }
+              sendJson(res, 200, { elevations, source: upstream.name })
               return
+            } catch (e) {
+              failures.push(`${upstream.name}: ${e instanceof Error ? e.message : 'unknown'}`)
             }
-            const data = (await resp.json()) as { elevation?: number[] }
-            if (!Array.isArray(data.elevation) || data.elevation.length !== locations.length) {
-              sendJson(res, 502, { error: 'upstream returned incomplete elevation data' })
-              return
-            }
-            sendJson(res, 200, { elevations: data.elevation })
-          } catch {
-            sendJson(res, 502, { error: 'upstream fetch failed' })
           }
+          sendJson(res, 502, { error: 'all upstream elevation providers failed', failures })
         })
       })
     },
   }
+}
+
+async function fetchFromOpenElevation(locations: LatLng[]): Promise<number[]> {
+  const resp = await fetch('https://api.open-elevation.com/api/v1/lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      locations: locations.map((p) => ({ latitude: p.lat, longitude: p.lng })),
+    }),
+  })
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  const data = (await resp.json()) as { results?: Array<{ elevation?: number | null }> }
+  if (!Array.isArray(data.results)) throw new Error('missing results')
+  return data.results.map((r) => (typeof r.elevation === 'number' ? r.elevation : 0))
+}
+
+async function fetchFromOpenTopoData(locations: LatLng[]): Promise<number[]> {
+  const pipe = locations.map((p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`).join('|')
+  const resp = await fetch(`https://api.opentopodata.org/v1/srtm30m?locations=${pipe}`)
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  const data = (await resp.json()) as { results?: Array<{ elevation?: number | null }>; status?: string }
+  if (data.status && data.status !== 'OK') throw new Error(data.status)
+  if (!Array.isArray(data.results)) throw new Error('missing results')
+  return data.results.map((r) => (typeof r.elevation === 'number' ? r.elevation : 0))
+}
+
+async function fetchFromOpenMeteo(locations: LatLng[]): Promise<number[]> {
+  const lats = locations.map((p) => p.lat.toFixed(6)).join(',')
+  const lngs = locations.map((p) => p.lng.toFixed(6)).join(',')
+  const resp = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`)
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+  const data = (await resp.json()) as { elevation?: number[] }
+  if (!Array.isArray(data.elevation)) throw new Error('missing elevation array')
+  return data.elevation
 }
 
 interface LatLng { lat: number; lng: number }
