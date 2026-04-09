@@ -128,25 +128,11 @@ export function MapView() {
       maxNativeZoom: 22,
     })
 
-    // ── Overlay: Esri World Hillshade ──
-    // Grayscale shading derived from a global DEM. Overlaid with low opacity
-    // on top of the satellite base layer it reveals pentes and reliefs sans
-    // masquer la couleur de la végétation. Gratuit, sans clé API.
-    const hillshade = L.tileLayer(
-      'https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: '© Esri World Hillshade',
-        maxZoom: 19,
-        maxNativeZoom: 19,
-        opacity: 0.55,
-      },
-    )
-
     googleSat.addTo(map)
 
     L.control.layers(
       { 'Google Satellite': googleSat, 'Esri Satellite': satellite },
-      { 'Relief (pentes)': hillshade },
+      {},
       { position: 'topright', collapsed: false },
     ).addTo(map)
 

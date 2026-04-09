@@ -126,11 +126,6 @@ export function HelpModal() {
             Bouton <Kbd>✨ Recalculer</Kbd> — force un nouveau calcul sur
             demande.
           </Bullet>
-          <Bullet>
-            Couche <b>Relief (hillshade)</b> — activable depuis le sélecteur
-            en haut à droite de la carte pour visualiser les pentes par-dessus
-            l'image satellite.
-          </Bullet>
         </Section>
 
         {/* ── 5. Archivage ── */}
