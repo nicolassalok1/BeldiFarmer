@@ -60,7 +60,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="bg-panel border-r border-border flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-bg">
+    <aside className="bg-panel border-r border-border flex flex-col h-full w-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-bg">
 
       {/* Offline / Terrain mode */}
       {store.exploitPolygon && <OfflineSection />}
