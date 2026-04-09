@@ -341,13 +341,15 @@ function AgendaTab() {
               ? `Arrosage — ${IRRIGATION_LABELS[a.watering!.method]} (${a.watering!.durationMin} min${a.watering!.flowRatePerHour ? `, ${a.watering!.flowRatePerHour} L/h` : ''})`
               : a.type === 'amendment'
                 ? `${a.amendment!.product} (${a.amendment!.customType || AMENDMENT_LABELS[a.amendment!.type]}, ${a.amendment!.quantityKg} kg)`
-                : a.other?.title || 'Activité'
+                : a.type === 'expense'
+                  ? `Dépense${a.expense?.category ? ` — ${a.expense.category}` : ''} · ${(a.expense?.amount ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} DH`
+                  : a.other?.title || 'Activité'
             return (
               <div key={a.id} className="border border-border p-2.5 hover:bg-olive/5 transition-colors">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="font-mono text-[10px] text-muted">{a.date}</span>
-                  <span className="font-mono text-xs text-text font-bold">{label}</span>
-                  {a.type !== 'watering' && (
+                  <span className={`font-mono text-xs font-bold ${a.type === 'expense' ? 'text-red' : 'text-text'}`}>{label}</span>
+                  {a.type !== 'watering' && a.type !== 'expense' && (
                     <span className="font-mono text-[10px] text-muted">· {a.workerCount} ouv.</span>
                   )}
                   {fieldNames && <span className="font-mono text-[10px] text-muted truncate">({fieldNames})</span>}

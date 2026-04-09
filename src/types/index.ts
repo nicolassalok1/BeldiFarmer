@@ -91,14 +91,14 @@ export interface SoilAnalysis {
 
 // ── Activités (unifiées) ──
 
-export type ActivityType = 'watering' | 'amendment' | 'other'
+export type ActivityType = 'watering' | 'amendment' | 'other' | 'expense'
 
 export interface Activity {
   id: number
   date: string                 // ISO YYYY-MM-DD
   type: ActivityType
-  fieldIds: number[]           // zones concernées
-  workerCount: number          // nombre d'ouvriers (0 pour arrosage)
+  fieldIds: number[]           // zones concernées — peut être vide pour les dépenses générales
+  workerCount: number          // nombre d'ouvriers (0 pour arrosage et dépense)
   notes?: string
   // données type-spécifiques
   watering?: {
@@ -114,6 +114,10 @@ export interface Activity {
     quantityKg: number
   }
   other?: { title: string }
+  expense?: {
+    amount: number             // montant en dirhams (DH)
+    category?: string          // catégorie libre (ex: "Carburant", "Matériel", "Main d'œuvre")
+  }
   createdAt: string
 }
 
@@ -180,7 +184,7 @@ export type EditTarget = { type: 'exploit' } | { type: 'field'; fieldId: number 
 export type GenerationMethod = 'grid' | 'zigzag' | 'random'
 
 export type DashboardTab = 'overview' | 'cultures' | 'personnel' | 'agenda' | 'watering' | 'amendments' | 'soil' | 'relief'
-export type FieldDetailTab = 'info' | 'culture' | 'watering' | 'amendments' | 'other' | 'soil' | 'relief'
+export type FieldDetailTab = 'info' | 'culture' | 'watering' | 'amendments' | 'other' | 'expenses' | 'soil' | 'relief'
 
 export interface AppState {
   // Exploitation

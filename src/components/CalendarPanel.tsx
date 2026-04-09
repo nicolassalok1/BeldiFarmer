@@ -5,19 +5,28 @@ import type { Activity, ActivityType, IrrigationMethod, AmendmentType } from '..
 const IRRIGATION_LABELS: Record<IrrigationMethod, string> = { goutte_a_goutte: 'Goutte à goutte', aspersion: 'Aspersion', gravitaire: 'Gravitaire', manuel: 'Manuel' }
 const AMENDMENT_LABELS: Record<AmendmentType, string> = { organique: 'Organique', mineral: 'Minéral', foliaire: 'Foliaire', correcteur: 'Correcteur' }
 
-const TYPE_LABELS: Record<ActivityType, string> = { watering: 'Arrosage', amendment: 'Engrais', other: 'Autre' }
+const TYPE_LABELS: Record<ActivityType, string> = { watering: 'Arrosage', amendment: 'Engrais', other: 'Autre', expense: 'Dépense' }
 const TYPE_COLOR: Record<ActivityType, string> = {
   watering: 'text-cyan border-cyan/60',
   amendment: 'text-olive-lit border-olive-lit/60',
   other: 'text-amber border-amber/60',
+  expense: 'text-red border-red/60',
 }
 
 function todayISO() { return new Date().toISOString().slice(0, 10) }
+function formatDH(amount: number): string {
+  // Simple thousands separator, no locale dependency (keeps bundle small).
+  return amount.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' DH'
+}
 function activityLabel(a: Activity): string {
   if (a.type === 'watering') return `${TYPE_LABELS.watering} — ${IRRIGATION_LABELS[a.watering!.method]}`
   if (a.type === 'amendment') {
     const cat = a.amendment!.customType || AMENDMENT_LABELS[a.amendment!.type]
     return `${a.amendment!.product} (${cat})`
+  }
+  if (a.type === 'expense') {
+    const cat = a.expense?.category ? ` — ${a.expense.category}` : ''
+    return `Dépense${cat} · ${formatDH(a.expense?.amount ?? 0)}`
   }
   return a.other?.title || 'Activité'
 }
@@ -154,7 +163,7 @@ function ActivityRow({ activity }: { activity: Activity }) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`font-mono text-[9px] px-1.5 py-px border ${TYPE_COLOR[activity.type]}`}>{TYPE_LABELS[activity.type]}</span>
         <span className="font-mono text-xs text-text font-bold">{activityLabel(activity)}</span>
-        {activity.type !== 'watering' && (
+        {activity.type !== 'watering' && activity.type !== 'expense' && (
           <span className="font-mono text-[10px] text-muted">{activity.workerCount} ouvrier{activity.workerCount > 1 ? 's' : ''}</span>
         )}
         <button onClick={() => store.openActivityForm({ date: activity.date, editId: activity.id })} className="ml-auto text-muted hover:text-olive-lit bg-transparent border-none cursor-pointer text-[11px]" title="Modifier">✎</button>

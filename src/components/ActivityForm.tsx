@@ -36,6 +36,9 @@ export function ActivityForm() {
   const [aQty, setAQty] = useState(10)
   // Other
   const [otherTitle, setOtherTitle] = useState('')
+  // Expense
+  const [eAmount, setEAmount] = useState('')
+  const [eCategory, setECategory] = useState('')
 
   // Initialize/reset when form opens
   useEffect(() => {
@@ -60,6 +63,10 @@ export function ActivityForm() {
           setAQty(a.amendment.quantityKg)
         }
         if (a.other) { setOtherTitle(a.other.title) }
+        if (a.expense) {
+          setEAmount(String(a.expense.amount))
+          setECategory(a.expense.category || '')
+        }
         return
       }
     }
@@ -71,6 +78,7 @@ export function ActivityForm() {
     setWMethod('goutte_a_goutte'); setWDuration(30); setWFlowRate('')
     setAType('organique'); setACustomType(''); setAProduct(''); setAQty(10)
     setOtherTitle('')
+    setEAmount(''); setECategory('')
   }, [open, editId, initialDate, presetType, presetFieldId])
 
   if (!open) return null
@@ -78,15 +86,26 @@ export function ActivityForm() {
   const toggleField = (id: number) => setFieldIds(fieldIds.includes(id) ? fieldIds.filter((x) => x !== id) : [...fieldIds, id])
 
   const handleSubmit = () => {
-    if (!fieldIds.length) { toast('⚠ Sélectionnez au moins une zone', true); return }
-    if (type !== 'watering' && workerCount < 1) { toast('⚠ Au moins 1 ouvrier', true); return }
+    // Expenses may be general (no field) — every other type requires a zone.
+    if (type !== 'expense' && !fieldIds.length) {
+      toast('⚠ Sélectionnez au moins une zone', true); return
+    }
+    // Watering and expense have no worker count; the rest require ≥1 worker.
+    if (type !== 'watering' && type !== 'expense' && workerCount < 1) {
+      toast('⚠ Au moins 1 ouvrier', true); return
+    }
     if (type === 'amendment' && !aProduct.trim()) { toast('⚠ Nom du produit requis', true); return }
     if (type === 'other' && !otherTitle.trim()) { toast('⚠ Titre de l\'activité requis', true); return }
+    if (type === 'expense') {
+      const amt = parseFloat(eAmount)
+      if (!Number.isFinite(amt) || amt <= 0) { toast('⚠ Montant invalide', true); return }
+      if (!notes.trim()) { toast('⚠ Décrivez la nature de la dépense dans les notes', true); return }
+    }
 
     const payload = {
       date, type, fieldIds,
-      // Watering n'a pas d'ouvriers — on stocke 0 pour cohérence du schéma
-      workerCount: type === 'watering' ? 0 : workerCount,
+      // Watering and expense have no worker count — stored as 0 for schema consistency.
+      workerCount: type === 'watering' || type === 'expense' ? 0 : workerCount,
       notes: notes.trim() || undefined,
       watering: type === 'watering' ? {
         method: wMethod,
@@ -100,6 +119,10 @@ export function ActivityForm() {
         quantityKg: aQty,
       } : undefined,
       other: type === 'other' ? { title: otherTitle.trim() } : undefined,
+      expense: type === 'expense' ? {
+        amount: parseFloat(eAmount),
+        category: eCategory.trim() || undefined,
+      } : undefined,
     }
 
     if (editId != null) {
@@ -127,24 +150,24 @@ export function ActivityForm() {
           {/* Type */}
           <div>
             <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">Type d'activité</div>
-            <div className="flex gap-1">
-              {(['watering', 'amendment', 'other'] as ActivityType[]).map((t) => (
+            <div className="grid grid-cols-4 gap-1">
+              {(['watering', 'amendment', 'other', 'expense'] as ActivityType[]).map((t) => (
                 <button key={t} onClick={() => setType(t)}
-                  className={`flex-1 font-mono text-[11px] px-2 py-1.5 border cursor-pointer transition-all ${type === t ? 'bg-olive border-olive-lit text-white' : 'bg-bg border-border text-muted hover:text-text'}`}>
-                  {t === 'watering' ? 'Arrosage' : t === 'amendment' ? 'Engrais' : 'Autre'}
+                  className={`font-mono text-[11px] px-2 py-1.5 border cursor-pointer transition-all ${type === t ? 'bg-olive border-olive-lit text-white' : 'bg-bg border-border text-muted hover:text-text'}`}>
+                  {t === 'watering' ? 'Arrosage' : t === 'amendment' ? 'Engrais' : t === 'other' ? 'Autre' : 'Dépense'}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Date + (workers if not watering) */}
-          <div className={`grid gap-3 ${type === 'watering' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {/* Date + (workers if applicable) */}
+          <div className={`grid gap-3 ${type === 'watering' || type === 'expense' ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <div>
               <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">Date</div>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
                 className="w-full font-mono text-xs bg-bg border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
             </div>
-            {type !== 'watering' && (
+            {type !== 'watering' && type !== 'expense' && (
               <div>
                 <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">Nombre d'ouvriers</div>
                 <input type="number" min={1} value={workerCount} onChange={(e) => setWorkerCount(parseInt(e.target.value) || 1)}
@@ -153,9 +176,11 @@ export function ActivityForm() {
             )}
           </div>
 
-          {/* Zones */}
+          {/* Zones — optional for expenses */}
           <div>
-            <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">Zones concernées</div>
+            <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">
+              Zones concernées{type === 'expense' && <span className="ml-1 text-muted normal-case">(optionnel)</span>}
+            </div>
             {fields.length ? (
               <div className="flex flex-wrap gap-1">
                 {fields.map((f) => {
@@ -234,11 +259,28 @@ export function ActivityForm() {
             </div>
           )}
 
+          {type === 'expense' && (
+            <div className="bg-bg border border-border p-3 space-y-2">
+              <div className="font-mono text-[9px] text-muted uppercase tracking-[1px]">Dépense</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-1">
+                  <input type="number" min={0} step="0.01" value={eAmount} onChange={(e) => setEAmount(e.target.value)} placeholder="Montant"
+                    className="flex-1 font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted w-0" />
+                  <span className="text-[9px] text-muted shrink-0">DH</span>
+                </div>
+                <input type="text" value={eCategory} onChange={(e) => setECategory(e.target.value)} placeholder="Catégorie (ex: Carburant)"
+                  className="font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           <div>
-            <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">Notes</div>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-              placeholder="Notes complémentaires (optionnel)"
+            <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">
+              Notes{type === 'expense' && <span className="ml-1 text-amber normal-case">(requises — décrivez la nature)</span>}
+            </div>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={type === 'expense' ? 3 : 2}
+              placeholder={type === 'expense' ? "Nature de la dépense (ex: Gasoil tracteur, réparation pompe…)" : "Notes complémentaires (optionnel)"}
               className="w-full font-mono text-xs bg-bg border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted resize-none" />
           </div>
 
