@@ -1,6 +1,49 @@
 import type { LatLng, SamplingPoint, CultureInfo, Employee, WateringEntry, AmendmentEntry, SoilAnalysis, ReliefInfo, AgendaTask, Activity } from '../types'
+import { supabase } from '../lib/supabase'
 
 const STORAGE_KEY = 'anrac-prelevements-v2'
+
+// ── Cloud persistence (Supabase) ──
+
+let _currentUserId: string | null = null
+let _saveTimeout: ReturnType<typeof setTimeout> | null = null
+
+export function setCurrentUserId(userId: string | null) {
+  _currentUserId = userId
+}
+
+/** Save to Supabase (debounced — waits 1s after last call) + localStorage as cache */
+export function saveToCloud(data: PersistedData): void {
+  // Always keep localStorage as fast cache
+  saveToStorage(data)
+
+  if (!_currentUserId) return
+
+  if (_saveTimeout) clearTimeout(_saveTimeout)
+  _saveTimeout = setTimeout(async () => {
+    try {
+      await supabase
+        .from('user_data')
+        .upsert({ user_id: _currentUserId, data }, { onConflict: 'user_id' })
+    } catch { /* silent — localStorage is the fallback */ }
+  }, 1000)
+}
+
+/** Load from Supabase. Returns null for new users (= blank app). */
+export async function loadFromCloud(userId: string): Promise<PersistedData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('data')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error || !data) return null
+    return normalizePersistedData(data.data as PersistedData)
+  } catch {
+    return null
+  }
+}
 
 export interface PersistedField {
   id: number

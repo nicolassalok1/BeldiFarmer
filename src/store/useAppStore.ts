@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { AppState } from '../types'
-import { saveToStorage, buildPersistedData } from '../utils/persistence'
+import { saveToCloud, buildPersistedData } from '../utils/persistence'
 
 export const FIELD_COLORS = [
   '#8fa84f', '#e6a817', '#a84f6a', '#4f6aa8', '#a8854f',
@@ -8,7 +8,7 @@ export const FIELD_COLORS = [
 ]
 
 function persist(state: AppState) {
-  saveToStorage(buildPersistedData(state))
+  saveToCloud(buildPersistedData(state))
 }
 
 export const useAppStore = create<AppState>((set, get) => ({

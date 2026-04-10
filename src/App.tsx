@@ -8,11 +8,28 @@ import { Dashboard } from './components/Dashboard'
 import { FieldDetailPanel } from './components/FieldDetailPanel'
 import { CalendarPanel } from './components/CalendarPanel'
 import { ActivityForm } from './components/ActivityForm'
+import { AuthPage } from './components/AuthPage'
+import { useAuth } from './contexts/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from './store/useAppStore'
 
 export default function App() {
+  const { t } = useTranslation()
+  const { user, loading } = useAuth()
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen)
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-[var(--color-bg)] flex items-center justify-center">
+        <div className="text-[var(--color-olive-lit)] font-[var(--font-mono)] text-sm tracking-widest uppercase animate-pulse">
+          {t('app.loading')}
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) return <AuthPage />
 
   // Layout:
   //   ┌───────────────────────────────────────────────┐

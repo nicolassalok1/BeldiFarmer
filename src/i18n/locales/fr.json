@@ -1,0 +1,58 @@
+{
+  "app": {
+    "title": "Gestion Exploitation & Prélèvements",
+    "brand": "ANRAC",
+    "subtitle": "Prélèvements GPS",
+    "footer": "ANRAC — Système de prélèvements",
+    "loading": "Chargement..."
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "Créer un compte",
+    "forgot": "Mot de passe oublié",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "fullName": "Nom complet",
+    "submit_login": "Se connecter",
+    "submit_signup": "Créer le compte",
+    "submit_forgot": "Envoyer le lien",
+    "forgot_link": "Mot de passe oublié ?",
+    "no_account": "Pas encore de compte ?",
+    "signup_link": "S'inscrire",
+    "has_account": "Déjà un compte ?",
+    "login_link": "Se connecter",
+    "back_login": "Retour à la connexion",
+    "success_signup": "Compte créé ! Vérifiez votre email pour confirmer votre inscription.",
+    "success_forgot": "Email de réinitialisation envoyé. Vérifiez votre boîte mail.",
+    "error_password_match": "Les mots de passe ne correspondent pas.",
+    "error_password_length": "Le mot de passe doit contenir au moins 6 caractères."
+  },
+  "header": {
+    "online": "EN LIGNE",
+    "offline": "HORS LIGNE",
+    "logout": "Déconnexion",
+    "show_tools": "Afficher les outils",
+    "hide_tools": "Masquer les outils"
+  },
+  "status": {
+    "waiting": "EN ATTENTE",
+    "restored": "DONNÉES RESTAURÉES",
+    "add_fields": "AJOUTEZ VOS CHAMPS"
+  },
+  "map": {
+    "exploitation": "EXPLOITATION",
+    "add_point": "AJOUTER POINT",
+    "point_added": "ajouté dans"
+  },
+  "fields": {
+    "title": "CHAMPS & POINTS",
+    "points": "pts",
+    "hectares": "ha",
+    "culture": "Culture"
+  },
+  "panel": {
+    "dashboard": "DASHBOARD",
+    "agenda": "AGENDA"
+  }
+}

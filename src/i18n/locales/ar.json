@@ -1,0 +1,58 @@
+{
+  "app": {
+    "title": "تدبير الضيعة و أخذ العينات",
+    "brand": "ANRAC",
+    "subtitle": "أخذ العينات GPS",
+    "footer": "ANRAC — نظام أخذ العينات",
+    "loading": "جاري التحميل..."
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "forgot": "نسيت كلمة السر",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة السر",
+    "confirmPassword": "تأكيد كلمة السر",
+    "fullName": "الاسم الكامل",
+    "submit_login": "دخول",
+    "submit_signup": "إنشاء الحساب",
+    "submit_forgot": "أرسل الرابط",
+    "forgot_link": "نسيت كلمة السر؟",
+    "no_account": "ما عندكش حساب؟",
+    "signup_link": "سجل",
+    "has_account": "عندك حساب؟",
+    "login_link": "دخل",
+    "back_login": "رجوع لتسجيل الدخول",
+    "success_signup": "تم إنشاء الحساب! شوف الإيميل ديالك باش تأكد التسجيل.",
+    "success_forgot": "تم إرسال إيميل إعادة تعيين كلمة السر.",
+    "error_password_match": "كلمات السر ما متطابقينش.",
+    "error_password_length": "كلمة السر خاصها تكون 6 حروف على الأقل."
+  },
+  "header": {
+    "online": "متصل",
+    "offline": "غير متصل",
+    "logout": "خروج",
+    "show_tools": "عرض الأدوات",
+    "hide_tools": "إخفاء الأدوات"
+  },
+  "status": {
+    "waiting": "في الانتظار",
+    "restored": "تم استرجاع البيانات",
+    "add_fields": "أضف الحقول ديالك"
+  },
+  "map": {
+    "exploitation": "الضيعة",
+    "add_point": "أضف نقطة",
+    "point_added": "تزاد ف"
+  },
+  "fields": {
+    "title": "الحقول و النقاط",
+    "points": "نقاط",
+    "hectares": "هكتار",
+    "culture": "الزراعة"
+  },
+  "panel": {
+    "dashboard": "لوحة التحكم",
+    "agenda": "الأجندا"
+  }
+}
