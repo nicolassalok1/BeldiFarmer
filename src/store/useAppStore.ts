@@ -15,7 +15,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,
   fields: [], fieldIdCounter: 0, selectedFieldId: null,
   champs: [], champIdCounter: 0, selectedChampId: null,
-  drawTarget: null, editTarget: null, addPointFieldId: null, generationMethod: 'grid', density: 1,
+  drawTarget: null, editTarget: null, addPointFieldId: null, drawForChampId: null, generationMethod: 'grid', density: 1,
   userLocation: null, geolocationActive: false, geolocationError: null,
   employees: [], employeeIdCounter: 0, strains: [],
   wateringLog: [], wateringIdCounter: 0,
@@ -151,6 +151,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setDrawTarget: (target) => set({ drawTarget: target }),
   setEditTarget: (target) => set({ editTarget: target }),
   setAddPointFieldId: (fieldId) => set({ addPointFieldId: fieldId }),
+  setDrawForChampId: (champId) => set({ drawForChampId: champId }),
   addManualPoint: (fieldId, point, marker) => {
     set((s) => ({
       fields: s.fields.map((f) => f.id === fieldId ? { ...f, points: [...f.points, point], pointMarkers: [...f.pointMarkers, marker] } : f),

@@ -439,8 +439,20 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
 
   store.addField(field)
   if (input) input.value = ''
-  store.setStatus(`PARCELLE "${name.toUpperCase()}" AJOUTÉE`)
-  store.toast(`✓ "${name}" ajouté — ${area.toFixed(2)} ha`)
+
+  // Auto-assign to champ if drawing was triggered from a ChampCard
+  const champId = store.drawForChampId
+  if (champId) {
+    store.addParcelleToChamp(champId, fieldId)
+    store.setDrawForChampId(null)
+    // Rebuild champ outline after the new parcelle is added
+    setTimeout(() => renderChampOnMap(champId), 50)
+    store.setStatus(`PARCELLE "${name.toUpperCase()}" AJOUTÉE AU CHAMP`)
+    store.toast(`✓ "${name}" ajouté au champ — ${area.toFixed(2)} ha`)
+  } else {
+    store.setStatus(`PARCELLE "${name.toUpperCase()}" AJOUTÉE`)
+    store.toast(`✓ "${name}" ajouté — ${area.toFixed(2)} ha`)
+  }
 
   // Background auto-compute relief (altitude, slope, exposition, sunshine)
   // for the newly created field. Silently skipped if offline.

@@ -222,6 +222,7 @@ export interface AppState {
   drawTarget: DrawTarget
   editTarget: EditTarget
   addPointFieldId: number | null  // when set, clicking map adds point to this field
+  drawForChampId: number | null   // when set, next drawn parcelle auto-assigns to this champ
 
   // Geolocation (runtime only — not persisted)
   userLocation: UserLocation | null
@@ -302,6 +303,7 @@ export interface AppState {
   updateExploitPolygon: (polygon: LatLng[], area: number) => void
   updateFieldPolygon: (fieldId: number, latlngs: LatLng[], area: number, perimeter: number) => void
   setAddPointFieldId: (fieldId: number | null) => void
+  setDrawForChampId: (champId: number | null) => void
   addManualPoint: (fieldId: number, point: SamplingPoint, marker: L.Marker) => void
   setUserLocation: (loc: UserLocation | null) => void
   setGeolocationActive: (active: boolean) => void

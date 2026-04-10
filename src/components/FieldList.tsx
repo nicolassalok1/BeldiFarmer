@@ -116,6 +116,9 @@ function ChampCard({ champ }: { champ: Champ }) {
   const selectField = useAppStore((s) => s.selectField)
   const editTarget = useAppStore((s) => s.editTarget)
   const isEditingChamp = editTarget?.type === 'champ' && editTarget.champId === champ.id
+  const drawTarget = useAppStore((s) => s.drawTarget)
+  const drawForChampId = useAppStore((s) => s.drawForChampId)
+  const isDrawingForThis = drawTarget === 'field' && drawForChampId === champ.id
 
   const parcelles = allFields.filter((f) => champ.parcelleIds.includes(f.id))
   const freeParcelles = allFields.filter((f) => !f.champId)
@@ -195,16 +198,29 @@ function ChampCard({ champ }: { champ: Champ }) {
             </div>
           ) : (
             <div className="flex gap-1 mb-2 flex-wrap">
-              <button className="btn-sm btn-cyan text-[10px]" title="Ajouter une parcelle"
-                onClick={(e) => { e.stopPropagation(); setAssigning(!assigning) }}>⊕ Parcelle</button>
-              <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"
-                onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'champ', champId: champ.id }) }}>✎ Contour</button>
-              {champ.customOutline && (
-                <button className="btn-sm btn-cyan text-[10px]" title="Recalculer auto"
-                  onClick={(e) => { e.stopPropagation(); useAppStore.getState().setChampCustomOutline(champ.id, undefined); renderChampOnMap(champ.id); useAppStore.getState().toast(`✓ Contour recalculé`) }}>↻ Auto</button>
+              {isDrawingForThis ? (
+                <button className="btn-sm btn-danger flex-1 text-[10px]"
+                  onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawTarget(null); useAppStore.getState().setDrawForChampId(null); useAppStore.getState().setStatus('EN ATTENTE') }}>
+                  ■ Annuler dessin
+                </button>
+              ) : (
+                <>
+                  <button className="btn-sm btn-active text-[10px]" title="Dessiner une nouvelle parcelle dans ce champ"
+                    onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawForChampId(champ.id); useAppStore.getState().setDrawTarget('field'); useAppStore.getState().setStatus(`DESSIN PARCELLE pour "${champ.name}" — cliquez les sommets`) }}>
+                    ▭ Dessiner
+                  </button>
+                  <button className="btn-sm btn-cyan text-[10px]" title="Assigner une parcelle existante"
+                    onClick={(e) => { e.stopPropagation(); setAssigning(!assigning) }}>⊕ Existante</button>
+                  <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"
+                    onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'champ', champId: champ.id }) }}>✎ Contour</button>
+                  {champ.customOutline && (
+                    <button className="btn-sm btn-cyan text-[10px]" title="Recalculer auto"
+                      onClick={(e) => { e.stopPropagation(); useAppStore.getState().setChampCustomOutline(champ.id, undefined); renderChampOnMap(champ.id); useAppStore.getState().toast(`✓ Contour recalculé`) }}>↻ Auto</button>
+                  )}
+                  <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
+                    onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
+                </>
               )}
-              <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
-                onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
             </div>
           )}
 
