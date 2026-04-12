@@ -3,7 +3,7 @@ import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
 import { computeFieldRelief } from '../utils/terrain-auto'
 import { triggerAutoReliefIfNeeded } from '../utils/relief-background'
-import type { FieldDetailTab, SeedType, IrrigationMethod, AmendmentType, Exposition } from '../types'
+import type { FieldDetailTab, SeedType, IrrigationMethod, AmendmentType, Exposition, BatchStage } from '../types'
 
 const TABS: { key: FieldDetailTab; label: string }[] = [
   { key: 'info', label: 'Infos' },
@@ -13,6 +13,8 @@ const TABS: { key: FieldDetailTab; label: string }[] = [
   { key: 'other', label: 'Autres' },
   { key: 'soil', label: 'Sol' },
   { key: 'relief', label: 'Relief' },
+  { key: 'batches', label: 'Germination' },
+  { key: 'plaques', label: 'Plaques' },
 ]
 
 const IRRIGATION_LABELS: Record<IrrigationMethod, string> = { goutte_a_goutte: 'Goutte à goutte', aspersion: 'Aspersion', gravitaire: 'Gravitaire', manuel: 'Manuel' }
@@ -26,8 +28,15 @@ export function FieldDetailPanel() {
   const close = useAppStore((s) => s.closeFieldDetail)
   const fieldId = useAppStore((s) => s.selectedFieldId)
   const field = useAppStore((s) => s.fields.find((f) => f.id === fieldId))
+  const champs = useAppStore((s) => s.champs)
 
   if (!open || !field) return null
+
+  const parentChamp = field.champId ? champs.find((c) => c.id === field.champId) : null
+  const isSerre = parentChamp?.type === 'serre'
+  const visibleTabs = isSerre
+    ? TABS.filter((t) => t.key !== 'soil' && t.key !== 'relief')
+    : TABS.filter((t) => t.key !== 'batches' && t.key !== 'plaques')
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[9999] flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) close() }}>
@@ -45,7 +54,7 @@ export function FieldDetailPanel() {
 
         {/* Tabs */}
         <div className="flex border-b border-border shrink-0 overflow-x-auto">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-3 py-2 text-[10px] font-semibold uppercase tracking-[.5px] border-b-2 whitespace-nowrap transition-all cursor-pointer bg-transparent border-x-0 border-t-0
                 ${tab === t.key ? 'border-olive-lit text-olive-lit' : 'border-transparent text-muted hover:text-text'}`}>
@@ -63,6 +72,8 @@ export function FieldDetailPanel() {
           {tab === 'other' && <OtherActivitiesTab />}
           {tab === 'soil' && <SoilTab />}
           {tab === 'relief' && <ReliefTab />}
+          {tab === 'batches' && <BatchesTab />}
+          {tab === 'plaques' && <PlaquesTab />}
         </div>
       </div>
     </div>
@@ -651,6 +662,321 @@ function ReliefTab() {
             className="w-full font-mono text-xs bg-bg border border-border text-text py-2 px-3 outline-none focus:border-olive-lit placeholder:text-muted" />
         </div>
       </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════
+//  BATCHES (Germination) — Serre only
+// ═══════════════════════════════════════
+
+const STAGE_LABELS: Record<BatchStage, string> = { semis: 'Semis', germe: 'Germé', pousse: 'Pousse', pret: 'Prêt' }
+const STAGE_COLOR: Record<BatchStage, string> = { semis: 'text-muted', germe: 'text-cyan', pousse: 'text-amber', pret: 'text-olive-lit' }
+
+function BatchesTab() {
+  const fieldId = useAppStore((s) => s.selectedFieldId)!
+  const field = useAppStore((s) => s.fields.find((f) => f.id === fieldId))!
+  const updateField = useAppStore((s) => s.updateField)
+  const toast = useAppStore((s) => s.toast)
+  const batches = field.batches || []
+  const archived = !!field.archived
+
+  const [adding, setAdding] = useState(false)
+  const [name, setName] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [seeds, setSeeds] = useState(50)
+  const [temp, setTemp] = useState('')
+  const [hum, setHum] = useState('')
+
+  const nextId = batches.reduce((m, b) => Math.max(m, b.id), 0) + 1
+
+  const handleAdd = () => {
+    if (!name.trim()) { toast('⚠ Nom du batch requis', true); return }
+    const batch = {
+      id: nextId, name: name.trim(), plantingDate: date, seedCount: seeds,
+      stage: 'semis' as BatchStage,
+      temperature: temp ? parseFloat(temp) : undefined,
+      humidity: hum ? parseFloat(hum) : undefined,
+    }
+    updateField(fieldId, { batches: [...batches, batch] })
+    toast(`✓ Batch "${name.trim()}" ajouté`)
+    setName(''); setSeeds(50); setTemp(''); setHum(''); setAdding(false)
+  }
+
+  const updateBatch = (id: number, patch: Partial<typeof batches[0]>) => {
+    updateField(fieldId, { batches: batches.map((b) => b.id === id ? { ...b, ...patch } : b) })
+  }
+
+  const removeBatch = (id: number) => {
+    if (!confirm('Supprimer ce batch ?')) return
+    updateField(fieldId, { batches: batches.filter((b) => b.id !== id) })
+    toast('Batch supprimé')
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-mono text-sm text-olive-lit tracking-[2px] uppercase">Germination</h3>
+        {!archived && <button onClick={() => setAdding(!adding)} className="btn-sm btn-active text-[10px]">+ Batch</button>}
+      </div>
+      <p className="text-xs text-muted">Suivi des lots de graines : température, humidité, stade de germination.</p>
+
+      {adding && (
+        <div className="bg-bg border border-border p-3 space-y-2">
+          <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1px]">Nouveau batch</div>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom du batch (ex: Lot A — OG Kush)"
+            className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Date mise en terre</div>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+            </div>
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Nb. graines</div>
+              <input type="number" min={1} value={seeds} onChange={(e) => setSeeds(parseInt(e.target.value) || 1)}
+                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Température (°C)</div>
+              <input type="number" step="0.5" value={temp} onChange={(e) => setTemp(e.target.value)} placeholder="—"
+                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+            </div>
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Humidité (%)</div>
+              <input type="number" min={0} max={100} value={hum} onChange={(e) => setHum(e.target.value)} placeholder="—"
+                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button className="flex-1 btn-active text-[10px]" onClick={handleAdd}>✓ Ajouter</button>
+            <button className="btn-danger text-[10px]" onClick={() => setAdding(false)}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {batches.length === 0 && !adding && (
+        <div className="text-center text-muted text-xs py-6">Aucun batch enregistré.</div>
+      )}
+
+      {batches.map((b) => (
+        <div key={b.id} className="bg-bg border border-border p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-text font-bold flex-1 truncate">{b.name}</span>
+            <span className={`font-mono text-[9px] px-1.5 py-px border ${STAGE_COLOR[b.stage]} border-current/40`}>{STAGE_LABELS[b.stage]}</span>
+            {!archived && (
+              <button onClick={() => removeBatch(b.id)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div><div className="text-[8px] text-muted uppercase">Graines</div><div className="font-mono text-sm text-olive-lit">{b.seedCount}</div></div>
+            <div><div className="text-[8px] text-muted uppercase">Mis en terre</div><div className="font-mono text-[10px] text-text">{new Date(b.plantingDate).toLocaleDateString('fr-FR')}</div></div>
+            <div><div className="text-[8px] text-muted uppercase">Temp.</div><div className="font-mono text-sm text-cyan">{b.temperature != null ? `${b.temperature}°` : '—'}</div></div>
+            <div><div className="text-[8px] text-muted uppercase">Humid.</div><div className="font-mono text-sm text-cyan">{b.humidity != null ? `${b.humidity}%` : '—'}</div></div>
+          </div>
+          {!archived && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Stade</div>
+                <select value={b.stage} onChange={(e) => updateBatch(b.id, { stage: e.target.value as BatchStage })}
+                  className="w-full font-mono text-[10px] bg-panel border border-border text-text py-1 px-1.5 outline-none focus:border-olive-lit">
+                  <option value="semis">Semis</option><option value="germe">Germé</option>
+                  <option value="pousse">Pousse</option><option value="pret">Prêt</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <div>
+                  <div className="font-mono text-[8px] text-muted uppercase mb-0.5">°C</div>
+                  <input type="number" step="0.5" value={b.temperature ?? ''} placeholder="—"
+                    onChange={(e) => updateBatch(b.id, { temperature: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    className="w-full font-mono text-[10px] bg-panel border border-border text-text py-1 px-1.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+                </div>
+                <div>
+                  <div className="font-mono text-[8px] text-muted uppercase mb-0.5">%H</div>
+                  <input type="number" min={0} max={100} value={b.humidity ?? ''} placeholder="—"
+                    onChange={(e) => updateBatch(b.id, { humidity: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    className="w-full font-mono text-[10px] bg-panel border border-border text-text py-1 px-1.5 outline-none focus:border-olive-lit placeholder:text-muted" />
+                </div>
+              </div>
+            </div>
+          )}
+          {b.notes && <div className="font-mono text-[10px] text-muted border-t border-border/30 pt-1 italic">{b.notes}</div>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════
+//  PLAQUES (Seed Trays) — Serre only
+// ═══════════════════════════════════════
+
+const PLAQUE_PRESETS = [
+  { label: '72 alvéoles (6×12)', rows: 6, cols: 12 },
+  { label: '128 alvéoles (8×16)', rows: 8, cols: 16 },
+  { label: '50 alvéoles (5×10)', rows: 5, cols: 10 },
+  { label: '24 alvéoles (4×6)', rows: 4, cols: 6 },
+]
+
+function PlaquesTab() {
+  const fieldId = useAppStore((s) => s.selectedFieldId)!
+  const field = useAppStore((s) => s.fields.find((f) => f.id === fieldId))!
+  const updateField = useAppStore((s) => s.updateField)
+  const toast = useAppStore((s) => s.toast)
+  const plaques = field.plaques || []
+  const batches = field.batches || []
+  const archived = !!field.archived
+
+  const [adding, setAdding] = useState(false)
+  const [pName, setPName] = useState('')
+  const [pRows, setPRows] = useState(6)
+  const [pCols, setPCols] = useState(12)
+  const [pBatch, setPBatch] = useState<number | ''>('')
+
+  const nextId = plaques.reduce((m, p) => Math.max(m, p.id), 0) + 1
+
+  const handleAdd = () => {
+    if (!pName.trim()) { toast('⚠ Nom de la plaque requis', true); return }
+    const plaque = {
+      id: nextId, name: pName.trim(), rows: pRows, cols: pCols,
+      cells: new Array(pRows * pCols).fill(true),
+      batchId: pBatch || undefined,
+    }
+    updateField(fieldId, { plaques: [...plaques, plaque] })
+    toast(`✓ Plaque "${pName.trim()}" créée (${pRows}×${pCols})`)
+    setPName(''); setPRows(6); setPCols(12); setPBatch(''); setAdding(false)
+  }
+
+  const toggleCell = (plaqueId: number, index: number) => {
+    if (archived) return
+    updateField(fieldId, {
+      plaques: plaques.map((p) => {
+        if (p.id !== plaqueId) return p
+        const cells = [...p.cells]
+        cells[index] = !cells[index]
+        return { ...p, cells }
+      }),
+    })
+  }
+
+  const removePlaque = (id: number) => {
+    if (!confirm('Supprimer cette plaque ?')) return
+    updateField(fieldId, { plaques: plaques.filter((p) => p.id !== id) })
+    toast('Plaque supprimée')
+  }
+
+  const fillAll = (plaqueId: number, value: boolean) => {
+    updateField(fieldId, {
+      plaques: plaques.map((p) => p.id === plaqueId ? { ...p, cells: p.cells.map(() => value) } : p),
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-mono text-sm text-olive-lit tracking-[2px] uppercase">Plaques</h3>
+        {!archived && <button onClick={() => setAdding(!adding)} className="btn-sm btn-active text-[10px]">+ Plaque</button>}
+      </div>
+      <p className="text-xs text-muted">Plaques alvéolées — cliquez sur une alvéole pour la marquer vide/pleine.</p>
+
+      {adding && (
+        <div className="bg-bg border border-border p-3 space-y-2">
+          <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1px]">Nouvelle plaque</div>
+          <input type="text" value={pName} onChange={(e) => setPName(e.target.value)} placeholder="Nom (ex: Plaque A1)"
+            className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+          <div className="flex flex-wrap gap-1">
+            {PLAQUE_PRESETS.map((p) => (
+              <button key={p.label} onClick={() => { setPRows(p.rows); setPCols(p.cols) }}
+                className={`font-mono text-[10px] px-2 py-1 border cursor-pointer transition-all ${pRows === p.rows && pCols === p.cols ? 'bg-olive border-olive-lit text-white' : 'bg-panel border-border text-muted hover:text-text'}`}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Lignes</div>
+              <input type="number" min={1} max={20} value={pRows} onChange={(e) => setPRows(parseInt(e.target.value) || 1)}
+                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+            </div>
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Colonnes</div>
+              <input type="number" min={1} max={30} value={pCols} onChange={(e) => setPCols(parseInt(e.target.value) || 1)}
+                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
+            </div>
+            <div>
+              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Batch lié</div>
+              <select value={pBatch} onChange={(e) => setPBatch(e.target.value ? parseInt(e.target.value) : '')}
+                className="w-full font-mono text-[10px] bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit">
+                <option value="">— Aucun —</option>
+                {batches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="font-mono text-[10px] text-muted">Total : {pRows * pCols} alvéoles</div>
+          <div className="flex gap-2">
+            <button className="flex-1 btn-active text-[10px]" onClick={handleAdd}>✓ Créer</button>
+            <button className="btn-danger text-[10px]" onClick={() => setAdding(false)}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {plaques.length === 0 && !adding && (
+        <div className="text-center text-muted text-xs py-6">Aucune plaque créée.</div>
+      )}
+
+      {plaques.map((p) => {
+        const filled = p.cells.filter(Boolean).length
+        const total = p.rows * p.cols
+        const batch = p.batchId ? batches.find((b) => b.id === p.batchId) : null
+        const pct = total > 0 ? Math.round((filled / total) * 100) : 0
+        // Compute cell size based on cols to fit in container
+        const cellSize = Math.min(20, Math.max(10, Math.floor(350 / p.cols)))
+        return (
+          <div key={p.id} className="bg-bg border border-border p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-text font-bold flex-1 truncate">{p.name}</span>
+              <span className="font-mono text-[9px] text-muted">{p.rows}×{p.cols}</span>
+              <span className={`font-mono text-[9px] px-1.5 py-px border ${pct === 100 ? 'text-olive-lit border-olive-lit/40' : pct > 0 ? 'text-amber border-amber/40' : 'text-muted border-border'}`}>
+                {filled}/{total} ({pct}%)
+              </span>
+              {!archived && (
+                <button onClick={() => removePlaque(p.id)} className="text-muted hover:text-red bg-transparent border-none cursor-pointer text-xs">✕</button>
+              )}
+            </div>
+            {batch && (
+              <div className="font-mono text-[9px] text-muted">Batch : <span className="text-olive-lit">{batch.name}</span></div>
+            )}
+
+            {/* Grid */}
+            <div className="flex justify-center overflow-x-auto py-1">
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${p.cols}, ${cellSize}px)`, gap: '2px' }}>
+                {p.cells.map((filled, i) => (
+                  <button key={i} onClick={() => toggleCell(p.id, i)}
+                    className="transition-all border-0 p-0"
+                    style={{
+                      width: cellSize, height: cellSize, borderRadius: '50%',
+                      background: filled ? 'var(--color-olive-lit)' : 'var(--color-border)',
+                      opacity: filled ? 1 : 0.4,
+                      cursor: archived ? 'default' : 'pointer',
+                    }}
+                    title={`${Math.floor(i / p.cols) + 1}-${(i % p.cols) + 1} : ${filled ? 'Graine' : 'Vide'}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            {!archived && (
+              <div className="flex gap-1 justify-center">
+                <button onClick={() => fillAll(p.id, true)} className="font-mono text-[9px] px-2 py-0.5 border border-olive-lit/40 text-olive-lit bg-transparent cursor-pointer hover:bg-olive/20">Tout remplir</button>
+                <button onClick={() => fillAll(p.id, false)} className="font-mono text-[9px] px-2 py-0.5 border border-border text-muted bg-transparent cursor-pointer hover:bg-panel">Tout vider</button>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

@@ -64,6 +64,8 @@ export interface PersistedField {
   archivedAt?: string
   archivedVisible?: boolean
   champId?: number
+  batches?: any[]
+  plaques?: any[]
 }
 
 export interface PersistedChamp {
@@ -162,6 +164,8 @@ export function buildPersistedData(state: {
       archivedAt: f.archivedAt,
       archivedVisible: f.archivedVisible,
       champId: f.champId,
+      batches: f.batches,
+      plaques: f.plaques,
     })),
     fieldIdCounter: state.fieldIdCounter,
     champs: state.champs.map((c) => ({

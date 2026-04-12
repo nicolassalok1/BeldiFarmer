@@ -162,6 +162,30 @@ export interface ReliefInfo {
   autoComputed?: boolean
 }
 
+// ── Serre : Batches & Plaques ──
+
+export type BatchStage = 'semis' | 'germe' | 'pousse' | 'pret'
+
+export interface SerreBatch {
+  id: number
+  name: string
+  plantingDate: string       // ISO date de mise en terre
+  seedCount: number
+  stage: BatchStage
+  temperature?: number       // °C
+  humidity?: number          // %
+  notes?: string
+}
+
+export interface SerrePlaque {
+  id: number
+  name: string
+  rows: number               // nb lignes (ex: 6)
+  cols: number               // nb colonnes (ex: 12)
+  cells: boolean[]           // true = graine, false = alvéole vide (length = rows*cols)
+  batchId?: number           // batch lié
+}
+
 // ── Parcelles (Fields) ──
 
 export interface Field {
@@ -180,6 +204,8 @@ export interface Field {
   archived?: boolean
   archivedAt?: string
   champId?: number            // ID du champ parent (undefined = parcelle libre)
+  batches?: SerreBatch[]      // batches germination (serre uniquement)
+  plaques?: SerrePlaque[]     // plaques alvéolées (serre uniquement)
   // Leaflet layers (runtime only)
   layer?: L.Polygon
   labelMarker?: L.Marker
@@ -219,7 +245,7 @@ export type EditTarget = { type: 'exploit' } | { type: 'field'; fieldId: number 
 export type GenerationMethod = 'grid' | 'zigzag' | 'random'
 
 export type DashboardTab = 'overview' | 'cultures' | 'agenda' | 'expenses' | 'watering' | 'amendments' | 'soil' | 'relief'
-export type FieldDetailTab = 'info' | 'culture' | 'watering' | 'amendments' | 'other' | 'soil' | 'relief'
+export type FieldDetailTab = 'info' | 'culture' | 'watering' | 'amendments' | 'other' | 'soil' | 'relief' | 'batches' | 'plaques'
 
 export interface AppState {
   // Exploitation

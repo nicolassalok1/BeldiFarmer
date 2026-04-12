@@ -479,6 +479,8 @@ function FieldCard({ field: f, isSelected, onSelect, champId, onRemoveFromChamp 
             )}
             <button className="btn-sm btn-cyan" title="Détails"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>◈</button>
+            <button className="btn-sm btn-cyan text-[10px]" title="Renommer"
+              onClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}>✎ Nom</button>
             <button className="btn-sm btn-amber" title="Modifier contour"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }) }}>✎</button>
             <button className="btn-sm btn-cyan" title="Archiver"
