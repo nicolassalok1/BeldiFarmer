@@ -427,6 +427,11 @@ function handleExploitCreated(layer: L.Polygon, map: L.Map) {
   }).addTo(map)
 
   store.setExploitation(polygon, area, layer, label)
+  // Respect the hidden state
+  if (store.exploitContourHidden) {
+    layer.remove()
+    label.remove()
+  }
   store.setStatus('AJOUTEZ VOS CHAMPS')
   store.toast(`✓ Exploitation définie — ${area.toFixed(2)} ha`)
 }
@@ -615,6 +620,11 @@ async function restorePersistedData(map: L.Map, userId?: string) {
     }).addTo(map)
 
     store.setExploitation(saved.exploitPolygon, saved.exploitArea, layer, label)
+    // Respect the hidden-by-default state
+    if (store.exploitContourHidden) {
+      layer.remove()
+      label.remove()
+    }
   }
 
   // Restore fields
