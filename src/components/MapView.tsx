@@ -457,6 +457,7 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
   const fieldId = store.fieldIdCounter + 1
   layer.on('click', () => {
       useAppStore.getState().selectField(fieldId)
+      useAppStore.getState().setMobileRightOpen(true)
       document.getElementById('field-card-' + fieldId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     })
 
@@ -572,10 +573,15 @@ export function renderChampOnMap(champId: number) {
 
   const labelMarker = L.marker(center, {
     icon: L.divIcon({
-      html: `<div style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:${champ.color};text-shadow:0 0 6px #000,0 0 12px #000;white-space:nowrap;letter-spacing:1px;text-transform:uppercase">${champ.name}</div>`,
+      html: `<div style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:${champ.color};text-shadow:0 0 6px #000,0 0 12px #000;white-space:nowrap;letter-spacing:1px;text-transform:uppercase;cursor:pointer">${champ.name}</div>`,
       iconSize: [0, 0], className: '',
     }),
   }).addTo(map)
+
+  labelMarker.on('click', () => {
+    useAppStore.getState().selectChamp(champId)
+    useAppStore.getState().setMobileRightOpen(true)
+  })
 
   // No champ outline polygon — parcelles themselves show the champ
   store.setChampLayer(champId, undefined as unknown as L.Polygon, labelMarker)
@@ -621,6 +627,7 @@ async function restorePersistedData(map: L.Map, userId?: string) {
 
       layer.on('click', () => {
         useAppStore.getState().selectField(sf.id)
+        useAppStore.getState().setMobileRightOpen(true)
         document.getElementById('field-card-' + sf.id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       })
 

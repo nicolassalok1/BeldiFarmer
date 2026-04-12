@@ -265,6 +265,7 @@ export interface AppState {
   fieldDetailOpen: boolean
   fieldDetailTab: FieldDetailTab
   sidebarOpen: boolean
+  mobileRightOpen: boolean
   calendarOpen: boolean
   activityFormOpen: boolean
   activityFormDate: string | null
@@ -358,6 +359,7 @@ export interface AppState {
   setFieldDetailTab: (tab: FieldDetailTab) => void
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
+  setMobileRightOpen: (open: boolean) => void
   setCalendarOpen: (open: boolean) => void
   openActivityForm: (opts?: { date?: string | null; editId?: number | null; presetType?: ActivityType; presetFieldId?: number }) => void
   closeActivityForm: () => void

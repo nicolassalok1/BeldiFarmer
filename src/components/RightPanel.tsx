@@ -8,8 +8,9 @@ export function RightPanel() {
   const fields = useAppStore((s) => s.fields).filter((f) => !f.archived)
   const setDashboardOpen = useAppStore((s) => s.setDashboardOpen)
   const setCalendarOpen = useAppStore((s) => s.setCalendarOpen)
+  const mobileOpen = useAppStore((s) => s.mobileRightOpen)
+  const setMobileOpen = useAppStore((s) => s.setMobileRightOpen)
   const [allPointsVisible, setAllPointsVisible] = useState(true)
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   const totalPoints = fields.reduce((s, f) => s + f.points.length, 0)
 
