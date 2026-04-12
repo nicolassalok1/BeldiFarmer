@@ -12,22 +12,14 @@ const LANGS = [
 
 export function Header() {
   const { t, i18n } = useTranslation()
-  const statusText = useAppStore((s) => s.statusText)
   const setHelpOpen = useAppStore((s) => s.setHelpOpen)
   const helpOpen = useAppStore((s) => s.helpOpen)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
+  const setDashboardOpen = useAppStore((s) => s.setDashboardOpen)
+  const setCalendarOpen = useAppStore((s) => s.setCalendarOpen)
   const { user, signOut } = useAuth()
-  const [online, setOnline] = useState(navigator.onLine)
   const [langOpen, setLangOpen] = useState(false)
-
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
-  }, [])
 
   // Close lang dropdown on outside click
   useEffect(() => {
@@ -56,13 +48,18 @@ export function Header() {
         {t('app.title')}
       </h1>
       <div className="flex-1" />
-      <div className="font-mono text-[10px] md:text-[11px] flex items-center gap-2 md:gap-3">
-        <div className={`flex items-center gap-1 px-1.5 md:px-2 py-0.5 border ${online ? 'border-olive text-olive-lit' : 'border-amber text-amber'}`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-olive-lit animate-[pulse_2s_infinite]' : 'bg-amber'}`} />
-          <span className="hidden sm:inline">{online ? t('header.online') : t('header.offline')}</span>
-        </div>
-        <span className="text-muted hidden sm:inline">{statusText}</span>
-      </div>
+      <button
+        onClick={() => setDashboardOpen(true)}
+        className="font-mono text-[10px] md:text-[11px] tracking-[1px] uppercase bg-amber/10 border border-amber text-amber px-2 md:px-3 py-1 cursor-pointer hover:bg-amber hover:text-black transition-all flex items-center gap-1 h-8 md:h-auto"
+      >
+        <span className="text-xs">◈</span> Dashboard
+      </button>
+      <button
+        onClick={() => setCalendarOpen(true)}
+        className="font-mono text-[10px] md:text-[11px] tracking-[1px] uppercase bg-cyan/10 border border-cyan text-cyan px-2 md:px-3 py-1 cursor-pointer hover:bg-cyan hover:text-black transition-all flex items-center gap-1 h-8 md:h-auto"
+      >
+        <span className="text-xs">◰</span> Agenda
+      </button>
       {user && (
         <div className="flex items-center gap-1.5 md:gap-2">
           <span className="hidden sm:inline text-[10px] text-muted truncate max-w-[100px] md:max-w-[120px]" title={user.email}>

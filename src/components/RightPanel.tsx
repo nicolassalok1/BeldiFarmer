@@ -6,8 +6,6 @@ import type { Field } from '../types'
 
 export function RightPanel() {
   const fields = useAppStore((s) => s.fields).filter((f) => !f.archived)
-  const setDashboardOpen = useAppStore((s) => s.setDashboardOpen)
-  const setCalendarOpen = useAppStore((s) => s.setCalendarOpen)
   const mobileOpen = useAppStore((s) => s.mobileRightOpen)
   const setMobileOpen = useAppStore((s) => s.setMobileRightOpen)
   const [allPointsVisible, setAllPointsVisible] = useState(true)
@@ -44,23 +42,6 @@ export function RightPanel() {
     </div>
   )
 
-  const quickButtons = (mobile = false) => (
-    <div className={`${mobile ? 'mx-3 mb-2' : 'm-3 mb-0'} flex gap-2 shrink-0`}>
-      <button
-        onClick={() => { setDashboardOpen(true); if (mobile) setMobileOpen(false) }}
-        className={`flex-1 ${mobile ? 'py-3' : 'py-2'} bg-amber/10 border border-amber text-amber font-semibold text-[11px] tracking-[1.5px] uppercase cursor-pointer hover:bg-amber hover:text-black transition-all flex items-center justify-center gap-1.5`}
-      >
-        <span className="text-sm">◈</span> Dashboard
-      </button>
-      <button
-        onClick={() => { setCalendarOpen(true); if (mobile) setMobileOpen(false) }}
-        className={`flex-1 ${mobile ? 'py-3' : 'py-2'} bg-cyan/10 border border-cyan text-cyan font-semibold text-[11px] tracking-[1.5px] uppercase cursor-pointer hover:bg-cyan hover:text-black transition-all flex items-center justify-center gap-1.5`}
-      >
-        <span className="text-sm">◰</span> Agenda
-      </button>
-    </div>
-  )
-
   return (
     <>
       {/* ── Mobile: FAB + bottom sheet ── */}
@@ -87,7 +68,6 @@ export function RightPanel() {
         <div className="flex justify-center py-2 shrink-0" onClick={() => setMobileOpen(false)}>
           <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
         </div>
-        {quickButtons(true)}
         {panelHeader}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <FieldList />
@@ -97,8 +77,7 @@ export function RightPanel() {
 
       {/* ── Desktop: classic sidebar ── */}
       <aside className="hidden md:flex bg-panel border-l border-border flex-col overflow-hidden">
-        {quickButtons(false)}
-        <div className="mt-3">{panelHeader}</div>
+        {panelHeader}
         <FieldList />
         <ArchivesSection />
       </aside>

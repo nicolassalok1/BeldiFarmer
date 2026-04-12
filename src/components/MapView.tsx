@@ -461,9 +461,8 @@ function handleFieldCreated(layer: L.Polygon, map: L.Map) {
 
   const fieldId = store.fieldIdCounter + 1
   layer.on('click', () => {
-      useAppStore.getState().selectField(fieldId)
+      useAppStore.getState().openFieldDetail(fieldId)
       useAppStore.getState().setMobileRightOpen(true)
-      document.getElementById('field-card-' + fieldId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     })
 
   const area = calcArea(latlngs) / 10000
@@ -636,9 +635,8 @@ async function restorePersistedData(map: L.Map, userId?: string) {
       })
 
       layer.on('click', () => {
-        useAppStore.getState().selectField(sf.id)
+        useAppStore.getState().openFieldDetail(sf.id)
         useAppStore.getState().setMobileRightOpen(true)
-        document.getElementById('field-card-' + sf.id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       })
 
       const center = layer.getBounds().getCenter()

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
 import { calcArea, calcPerimeter } from '../utils/geometry'
@@ -125,6 +125,12 @@ function ChampCard({ champ }: { champ: Champ }) {
   const freeParcelles = allFields.filter((f) => !f.champId)
   const totalArea = parcelles.reduce((s, f) => s + f.area, 0)
 
+  // Auto-open when a parcelle inside this champ is selected on the map
+  const hasSelectedParcelle = selectedFieldId != null && champ.parcelleIds.includes(selectedFieldId)
+  useEffect(() => {
+    if (hasSelectedParcelle && !open) setOpen(true)
+  }, [hasSelectedParcelle])
+
   const handleRename = () => {
     const name = editName.trim()
     if (!name) { setEditName(champ.name); setEditing(false); return }
@@ -204,12 +210,17 @@ function ChampCard({ champ }: { champ: Champ }) {
                 </button>
               ) : (
                 <>
-                  <button className="btn-sm btn-active text-[10px]" title="Dessiner une nouvelle parcelle dans ce champ"
-                    onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawForChampId(champ.id); useAppStore.getState().setDrawTarget('field'); useAppStore.getState().setStatus(`DESSIN PARCELLE pour "${champ.name}" — cliquez les sommets`) }}>
-                    ▭ Dessiner
-                  </button>
-                  <button className="btn-sm btn-cyan text-[10px]" title="Assigner des parcelles existantes"
-                    onClick={(e) => { e.stopPropagation(); if (!assigning) setSelectedParcelleIds([]); setAssigning(!assigning) }}>⊕ Existantes</button>
+                  <div className="w-full border border-border bg-bg/40 p-1.5 mb-1">
+                    <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1.5px] mb-1.5">Ajouter une nouvelle parcelle</div>
+                    <div className="flex gap-1">
+                      <button className="btn-sm btn-active flex-1 text-[10px]" title="Dessiner une nouvelle parcelle dans ce champ"
+                        onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawForChampId(champ.id); useAppStore.getState().setDrawTarget('field'); useAppStore.getState().setStatus(`DESSIN PARCELLE pour "${champ.name}" — cliquez les sommets`) }}>
+                        ▭ Dessiner
+                      </button>
+                      <button className="btn-sm btn-cyan flex-1 text-[10px]" title="Assigner des parcelles existantes"
+                        onClick={(e) => { e.stopPropagation(); if (!assigning) setSelectedParcelleIds([]); setAssigning(!assigning) }}>⊕ Existantes</button>
+                    </div>
+                  </div>
                   <button className="btn-sm btn-cyan text-[10px]" title="Renommer le champ"
                     onClick={(e) => { e.stopPropagation(); setEditName(champ.name); setEditing(true) }}>✎ Renommer</button>
                   <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"

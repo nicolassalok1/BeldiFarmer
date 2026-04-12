@@ -72,7 +72,9 @@ export function CalendarPanel() {
       <div className="bg-panel border border-border w-full h-full md:w-[92vw] md:max-w-[720px] md:h-[85vh] flex flex-col">
         <div className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 border-b border-border">
           <span className="font-mono text-xs md:text-sm text-olive-lit tracking-[2px] uppercase flex-1 truncate">◰ Agenda</span>
-          <button onClick={() => openActivityForm({ date: selectedDay || todayISO() })} className="btn-active text-[10px]">+ Activité</button>
+          <button onClick={() => openActivityForm({ date: selectedDay || todayISO(), presetType: 'watering' })} className="btn-cyan text-[10px]">💧</button>
+          <button onClick={() => openActivityForm({ date: selectedDay || todayISO(), presetType: 'amendment' })} className="btn-active text-[10px]">🌱</button>
+          <button onClick={() => openActivityForm({ date: selectedDay || todayISO(), presetType: 'expense' })} className="btn-danger text-[10px]">💰</button>
           <button onClick={() => setOpen(false)} className="text-muted hover:text-red bg-transparent border-none text-lg cursor-pointer w-9 h-9 flex items-center justify-center">✕</button>
         </div>
 
@@ -139,7 +141,12 @@ export function CalendarPanel() {
                 <div className="font-mono text-[10px] text-olive-lit tracking-[2px] uppercase">
                   {new Date(selectedDay).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ({dayActivities.length})
                 </div>
-                <button onClick={() => openActivityForm({ date: selectedDay })} className="btn-sm btn-active text-[10px]">+ Ajouter</button>
+              </div>
+              <div className="flex gap-1 mb-2 flex-wrap">
+                <button onClick={() => openActivityForm({ date: selectedDay, presetType: 'watering' })} className="btn-sm btn-cyan text-[10px] flex-1">💧 Arrosage</button>
+                <button onClick={() => openActivityForm({ date: selectedDay, presetType: 'amendment' })} className="btn-sm btn-active text-[10px] flex-1">🌱 Amendement</button>
+                <button onClick={() => openActivityForm({ date: selectedDay, presetType: 'expense' })} className="btn-sm btn-danger text-[10px] flex-1">💰 Dépense</button>
+                <button onClick={() => openActivityForm({ date: selectedDay, presetType: 'other' })} className="btn-sm text-[10px] border border-amber text-amber bg-amber/10 hover:bg-amber/20 cursor-pointer flex-1">✦ Autre</button>
               </div>
               {dayActivities.length ? (
                 <div className="space-y-1">
