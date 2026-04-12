@@ -7,7 +7,6 @@ import { changeLanguage } from '../i18n'
 const LANGS = [
   { code: 'fr', label: 'FR' },
   { code: 'en', label: 'EN' },
-  { code: 'ar', label: 'عر' },
 ] as const
 
 export function Header() {
