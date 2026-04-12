@@ -321,19 +321,7 @@ function FieldCard({ field: f, isSelected, onSelect, champId, onRemoveFromChamp 
     setEditing(false)
   }
 
-  const handleDelete = () => {
-    const pts = f.points.length
-    const msg = pts > 0
-      ? `Supprimer la parcelle "${f.name}" et ses ${pts} point${pts > 1 ? 's' : ''} ?\nIrréversible.`
-      : `Supprimer la parcelle "${f.name}" ?\nIrréversible.`
-    if (!window.confirm(msg)) return
-    f.layer?.remove()
-    f.labelMarker?.remove()
-    f.pointMarkers.forEach((m) => m.remove())
-    useAppStore.getState().removeField(f.id)
-    if (champId) renderChampOnMap(champId)
-    useAppStore.getState().toast(`Parcelle "${f.name}" supprimée`)
-  }
+
 
   return (
     <div
