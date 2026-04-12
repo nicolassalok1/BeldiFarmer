@@ -12,7 +12,7 @@ function persist(state: AppState) {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null, exploitContourHidden: false,
+  exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null, exploitContourHidden: true,
   fields: [], fieldIdCounter: 0, selectedFieldId: null,
   champs: [], champIdCounter: 0, selectedChampId: null,
   drawTarget: null, editTarget: null, addPointFieldId: null, drawForChampId: null, generationMethod: 'grid', density: 1,
