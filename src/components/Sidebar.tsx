@@ -109,7 +109,7 @@ export function Sidebar() {
                   store.toast('✓ Exploitation mise à jour')
                 }}>✓ Valider</button>
               ) : (
-                <button className="btn-sm btn-cyan flex-1" onClick={() => store.setEditTarget({ type: 'exploit' })}>✎ Modifier contour</button>
+                <button className="btn-sm btn-cyan flex-1" onClick={() => { store.setEditTarget({ type: 'exploit' }); store.setSidebarOpen(false) }}>✎ Modifier contour</button>
               )}
               {store.editTarget?.type === 'exploit' && (
                 <button className="btn-sm btn-danger" onClick={() => {
