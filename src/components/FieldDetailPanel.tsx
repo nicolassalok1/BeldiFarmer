@@ -685,7 +685,6 @@ function BatchesTab() {
   const updateField = useAppStore((s) => s.updateField)
   const toast = useAppStore((s) => s.toast)
   const allChamps = useAppStore((s) => s.champs)
-  const allFields = useAppStore((s) => s.fields).filter((f) => !f.archived)
   const strains = useAppStore((s) => s.strains)
   const batches = field.batches || []
   const plaques = field.plaques || []
