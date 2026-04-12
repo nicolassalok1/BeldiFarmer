@@ -414,14 +414,12 @@ function FieldCard({ field: f, isSelected, onSelect, champId, onRemoveFromChamp 
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>◈</button>
             <button className="btn-sm btn-amber" title="Modifier contour"
               onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }) }}>✎</button>
-            {onRemoveFromChamp && (
-              <button className="btn-sm btn-cyan text-[10px]" title="Retirer du champ"
-                onClick={(e) => { e.stopPropagation(); onRemoveFromChamp() }}>↗</button>
-            )}
             <button className="btn-sm btn-cyan" title="Archiver"
               onClick={(e) => { e.stopPropagation(); setArchiveOpen(true) }}>◱</button>
-            <button className="btn-sm btn-danger" title="Supprimer"
-              onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
+            {onRemoveFromChamp && (
+              <button className="btn-sm btn-danger text-[10px] ml-auto" title="Retirer du champ"
+                onClick={(e) => { e.stopPropagation(); onRemoveFromChamp() }}>↗ Retirer</button>
+            )}
           </>
         )}
       </div>
