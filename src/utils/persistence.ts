@@ -30,6 +30,17 @@ export function saveToCloud(data: PersistedData): void {
   }, 1000)
 }
 
+/** Save to Supabase immediately (no debounce). Use for file imports before reload. */
+export async function saveToCloudImmediate(data: PersistedData): Promise<void> {
+  saveToStorage(data)
+  if (!_currentUserId || !supabase) return
+  try {
+    await supabase
+      .from('user_data')
+      .upsert({ user_id: _currentUserId, data }, { onConflict: 'user_id' })
+  } catch { /* silent */ }
+}
+
 /** Load from Supabase. Returns null for new users (= blank app). */
 export async function loadFromCloud(userId: string): Promise<PersistedData | null> {
   if (!supabase) return null
