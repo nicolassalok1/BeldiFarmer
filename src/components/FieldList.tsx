@@ -210,6 +210,8 @@ function ChampCard({ champ }: { champ: Champ }) {
                   </button>
                   <button className="btn-sm btn-cyan text-[10px]" title="Assigner des parcelles existantes"
                     onClick={(e) => { e.stopPropagation(); if (!assigning) setSelectedParcelleIds([]); setAssigning(!assigning) }}>⊕ Existantes</button>
+                  <button className="btn-sm btn-cyan text-[10px]" title="Renommer le champ"
+                    onClick={(e) => { e.stopPropagation(); setEditName(champ.name); setEditing(true) }}>✎ Renommer</button>
                   <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"
                     onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'champ', champId: champ.id }) }}>✎ Contour</button>
                   {champ.customOutline && (
