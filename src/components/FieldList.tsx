@@ -107,7 +107,7 @@ export function FieldList() {
 }
 
 function ChampCard({ champ }: { champ: Champ }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(champ.name)
   const [assigning, setAssigning] = useState(false)
