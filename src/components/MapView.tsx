@@ -3,8 +3,9 @@ import L from 'leaflet'
 import 'leaflet-draw'
 import { useAppStore, FIELD_COLORS } from '../store/useAppStore'
 import { calcArea, calcPerimeter, isInsidePolygon, computeChampOutline } from '../utils/geometry'
-import { loadFromStorage } from '../utils/persistence'
+import { loadFromStorage, loadFromCloud, setCurrentUserId } from '../utils/persistence'
 import { triggerAutoReliefIfNeeded } from '../utils/relief-background'
+import { useAuth } from '../contexts/AuthContext'
 import { GeolocationControl } from './GeolocationControl'
 import type { LatLng, Field, UserLocation, Champ } from '../types'
 
@@ -75,6 +76,7 @@ export function addPointFromUserLocation(fieldId: number, loc: UserLocation, not
 }
 
 export function MapView() {
+  const { user } = useAuth()
   const mapRef = useRef<L.Map | null>(null)
   const drawnRef = useRef<L.FeatureGroup | null>(null)
   const drawHandlerRef = useRef<L.Draw.Polygon | null>(null)
@@ -214,7 +216,12 @@ export function MapView() {
         exploitPolygon: null, exploitArea: 0, exploitLayer: null, exploitLabel: null,
       })
     }
-    restorePersistedData(map)
+
+    // Set current user for cloud persistence and load their data
+    if (user) {
+      setCurrentUserId(user.id)
+      restorePersistedData(map, user.id)
+    }
     persistedDataRestored = true
 
     return () => {
@@ -538,8 +545,8 @@ export function renderChampOnMap(champId: number) {
 
 // ── Restore persisted data ──
 
-function restorePersistedData(map: L.Map) {
-  const saved = loadFromStorage()
+async function restorePersistedData(map: L.Map, userId: string) {
+  const saved = await loadFromCloud(userId)
   if (!saved) return
 
   const store = useAppStore.getState()

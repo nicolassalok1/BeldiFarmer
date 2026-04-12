@@ -1,0 +1,58 @@
+{
+  "app": {
+    "title": "Farm Management & Sampling",
+    "brand": "ANRAC",
+    "subtitle": "GPS Sampling",
+    "footer": "ANRAC — Sampling System",
+    "loading": "Loading..."
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Create Account",
+    "forgot": "Forgot Password",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "submit_login": "Sign In",
+    "submit_signup": "Create Account",
+    "submit_forgot": "Send Link",
+    "forgot_link": "Forgot password?",
+    "no_account": "No account yet?",
+    "signup_link": "Sign Up",
+    "has_account": "Already have an account?",
+    "login_link": "Sign In",
+    "back_login": "Back to login",
+    "success_signup": "Account created! Check your email to confirm your registration.",
+    "success_forgot": "Reset email sent. Check your inbox.",
+    "error_password_match": "Passwords do not match.",
+    "error_password_length": "Password must be at least 6 characters."
+  },
+  "header": {
+    "online": "ONLINE",
+    "offline": "OFFLINE",
+    "logout": "Logout",
+    "show_tools": "Show tools",
+    "hide_tools": "Hide tools"
+  },
+  "status": {
+    "waiting": "WAITING",
+    "restored": "DATA RESTORED",
+    "add_fields": "ADD YOUR FIELDS"
+  },
+  "map": {
+    "exploitation": "FARM",
+    "add_point": "ADD POINT",
+    "point_added": "added in"
+  },
+  "fields": {
+    "title": "FIELDS & POINTS",
+    "points": "pts",
+    "hectares": "ha",
+    "culture": "Crop"
+  },
+  "panel": {
+    "dashboard": "DASHBOARD",
+    "agenda": "AGENDA"
+  }
+}

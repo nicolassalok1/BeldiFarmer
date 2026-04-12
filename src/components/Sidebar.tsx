@@ -78,7 +78,7 @@ export function Sidebar() {
             className={`btn-full ${store.drawTarget === 'exploit' ? 'btn-danger' : 'btn-cyan'}`}
             onClick={() => {
               if (store.drawTarget === 'exploit') { store.setDrawTarget(null); store.setStatus('EN ATTENTE') }
-              else { store.setDrawTarget('exploit'); store.setStatus('DESSIN EXPLOITATION — cliquez les sommets') }
+              else { store.setDrawTarget('exploit'); store.setStatus('DESSIN EXPLOITATION — cliquez les sommets'); store.setSidebarOpen(false) }
             }}
           >
             {store.drawTarget === 'exploit' ? '■ Annuler' : '◈ Dessiner l\'exploitation'}
@@ -150,7 +150,7 @@ export function Sidebar() {
               else {
                 const input = document.getElementById('field-name-input') as HTMLInputElement
                 if (!input.value.trim()) { store.toast('⚠ Saisissez un nom', true); input.focus(); return }
-                store.setDrawTarget('field'); store.setStatus('DESSIN PARCELLE — cliquez les sommets')
+                store.setDrawTarget('field'); store.setStatus('DESSIN PARCELLE — cliquez les sommets'); store.setSidebarOpen(false)
               }
             }}
           >
