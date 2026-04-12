@@ -737,7 +737,38 @@ function BatchesTab() {
       })
     }
     updateField(fieldId, { batches: [...batches, batch], plaques: [...plaques, ...newPlaques] })
-    toast(`✓ Batch "${bName.trim()}" + ${bPlaqueCount} plaque(s) créé`)
+
+    // ── Auto-create agenda activities for this batch ──
+    const store = useAppStore.getState()
+    const batchLabel = `${bName.trim()} (${bStrain.trim()})`
+    const targetName = bTarget ? allChamps.find((c) => c.id === Number(bTarget))?.name : null
+
+    // 1. Semis day
+    store.addActivity({
+      date: bDate, type: 'other', fieldIds: [], workerCount: 0,
+      notes: `${bSeeds} graines · ${bPlaqueCount} plaque(s) ${bPlaqueRows}×${bPlaqueCols}`,
+      other: { title: `🌱 Semis — ${batchLabel}` },
+    })
+
+    // 2. Mid-point check (50% of weeks)
+    const midDate = new Date(bDate)
+    midDate.setDate(midDate.getDate() + Math.round(bWeeks * 7 / 2))
+    store.addActivity({
+      date: midDate.toISOString().slice(0, 10), type: 'other', fieldIds: [], workerCount: 0,
+      notes: `Vérifier germination, temp, humidité. Objectif : 2-3 noeuds.`,
+      other: { title: `🔍 Contrôle germination — ${batchLabel}` },
+    })
+
+    // 3. Transplant day
+    const transplantDate = new Date(bDate)
+    transplantDate.setDate(transplantDate.getDate() + bWeeks * 7)
+    store.addActivity({
+      date: transplantDate.toISOString().slice(0, 10), type: 'other', fieldIds: [], workerCount: 0,
+      notes: targetName ? `Destination : ${targetName}` : 'Champ de destination à définir',
+      other: { title: `🚜 TRANSPLANTATION — ${batchLabel}${targetName ? ` → ${targetName}` : ''}` },
+    })
+
+    toast(`✓ Batch "${bName.trim()}" + ${bPlaqueCount} plaque(s) créé · 3 jalons ajoutés à l'agenda`)
     setBName(''); setBStrain(''); setBSeeds(50); setBWeeks(3); setBTemp(''); setBHum(''); setBTarget(''); setBPlaqueCount(1); setAdding(false)
   }
 

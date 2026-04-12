@@ -43,6 +43,7 @@ export function CalendarPanel() {
   const activities = useAppStore((s) => s.activities)
   const openActivityForm = useAppStore((s) => s.openActivityForm)
   const fields = useAppStore((s) => s.fields)
+  const champs = useAppStore((s) => s.champs)
 
   const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
@@ -86,6 +87,48 @@ export function CalendarPanel() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 md:p-5">
+          {/* Serre batch reminders */}
+          {(() => {
+            const now = Date.now()
+            const serres = champs.filter((c) => c.type === 'serre')
+            const allBatches: { batch: typeof fields[0]['batches'] extends (infer T)[] | undefined ? T : never; serreName: string; parcelleName: string }[] = []
+            for (const serre of serres) {
+              const parcelles = fields.filter((f) => serre.parcelleIds.includes(f.id))
+              for (const p of parcelles) {
+                for (const b of (p.batches || [])) {
+                  if (b.stage === 'pret') continue // already transplanted stage-wise
+                  allBatches.push({ batch: b, serreName: serre.name, parcelleName: p.name })
+                }
+              }
+            }
+            if (!allBatches.length) return null
+            // Sort by days left ascending
+            const withDays = allBatches.map(({ batch: b, serreName, parcelleName }) => {
+              const transplant = new Date(b.plantingDate)
+              transplant.setDate(transplant.getDate() + b.weeksToTransplant * 7)
+              const dl = Math.ceil((transplant.getTime() - now) / (1000 * 60 * 60 * 24))
+              const target = b.targetChampId ? champs.find((c) => c.id === b.targetChampId)?.name : null
+              return { ...b, dl, serreName, parcelleName, targetName: target }
+            }).filter((b) => b.dl <= 14).sort((a, b) => a.dl - b.dl) // only show ≤14 days
+            if (!withDays.length) return null
+            return (
+              <div className="mb-4 border border-amber/40 bg-amber/5 p-3 space-y-1.5">
+                <div className="font-mono text-[9px] text-amber uppercase tracking-[1.5px]">Rappels serre — transplantations à venir</div>
+                {withDays.map((b) => (
+                  <div key={`${b.serreName}-${b.id}`} className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-mono text-[10px] font-bold ${b.dl <= 0 ? 'text-red' : b.dl <= 3 ? 'text-amber' : 'text-olive-lit'}`}>
+                      {b.dl <= 0 ? 'MAINTENANT' : `J-${b.dl}`}
+                    </span>
+                    <span className="font-mono text-[10px] text-text">{b.name}</span>
+                    <span className="font-mono text-[9px] text-amber">{b.strain}</span>
+                    <span className="font-mono text-[9px] text-muted">{b.serreName}</span>
+                    {b.targetName && <span className="font-mono text-[9px] text-olive-lit">→ {b.targetName}</span>}
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
           {/* Month nav */}
           <div className="flex items-center justify-between mb-2 gap-2">
             <button onClick={() => setCursor(new Date(year, month - 1, 1))}
