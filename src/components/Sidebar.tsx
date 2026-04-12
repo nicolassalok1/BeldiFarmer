@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useAuth } from '../contexts/AuthContext'
+import { clearStorage } from '../utils/persistence'
 import { StepIndicator } from './StepIndicator'
 import { exportProject, parseProjectFile } from '../utils/exporters'
 import { saveToStorage, buildPersistedData } from '../utils/persistence'
@@ -179,6 +181,8 @@ export function Sidebar() {
         }}>✕ Tout effacer</button>
       </Section>
 
+      <DeleteAccountSection />
+
     </aside>
   )
 }
@@ -245,6 +249,60 @@ function OfflineSection() {
           onClick={handleCacheTiles}>
           ↓ Préparer mode terrain (~{tileCount} tuiles)
         </button>
+      )}
+    </div>
+  )
+}
+
+function DeleteAccountSection() {
+  const { user, signOut } = useAuth()
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+
+  if (!user) return null
+
+  const handleDelete = async () => {
+    if (confirmText !== 'SUPPRIMER') return
+    try {
+      const { supabase } = await import('../lib/supabase')
+      if (supabase) {
+        await supabase.from('user_data').delete().eq('user_id', user.id)
+      }
+      clearStorage()
+      useAppStore.getState().clearAll()
+      useAppStore.getState().toast('✓ Compte et données supprimés')
+      signOut()
+    } catch {
+      useAppStore.getState().toast('⚠ Erreur lors de la suppression', true)
+    }
+  }
+
+  return (
+    <div className="mt-auto p-3 px-4 border-t border-red/30">
+      {!showConfirm ? (
+        <button onClick={() => setShowConfirm(true)}
+          className="w-full py-1.5 font-mono text-[9px] text-muted border border-border hover:border-red hover:text-red cursor-pointer transition-all bg-transparent uppercase tracking-[1px]">
+          Supprimer mon compte
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <div className="font-mono text-[10px] text-red font-bold uppercase">Suppression définitive</div>
+          <p className="font-mono text-[9px] text-muted leading-relaxed">
+            Toutes vos données seront supprimées de façon irréversible : parcelles, champs, serres, activités, mesures.
+          </p>
+          <p className="font-mono text-[9px] text-red">Tapez <span className="font-bold">SUPPRIMER</span> pour confirmer :</p>
+          <input type="text" value={confirmText} onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="SUPPRIMER"
+            className="w-full font-mono text-xs bg-bg border border-red/40 text-red py-1.5 px-2 outline-none focus:border-red placeholder:text-red/30" />
+          <div className="flex gap-1">
+            <button className="flex-1 btn-danger text-[10px]" disabled={confirmText !== 'SUPPRIMER'} onClick={handleDelete}
+              style={{ opacity: confirmText === 'SUPPRIMER' ? 1 : 0.3 }}>
+              Supprimer définitivement
+            </button>
+            <button className="btn-sm text-[10px] border border-border text-muted bg-transparent cursor-pointer hover:text-text"
+              onClick={() => { setShowConfirm(false); setConfirmText('') }}>Annuler</button>
+          </div>
+        </div>
       )}
     </div>
   )

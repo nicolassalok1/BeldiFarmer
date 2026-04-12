@@ -39,11 +39,11 @@ export function FieldDetailPanel() {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[9999] flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) close() }}>
-      <div className="w-[480px] max-w-[90vw] h-full bg-panel border-l border-border flex flex-col animate-[slideIn_0.2s_ease-out]">
+      <div className="w-full md:w-[480px] md:max-w-[90vw] h-full bg-panel border-l border-border flex flex-col animate-[slideIn_0.2s_ease-out]">
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-border shrink-0">
+        <div className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 border-b border-border shrink-0">
           <div className="w-3 h-3 rounded-full" style={{ background: field.color }} />
-          <h2 className={`font-mono text-sm font-bold flex-1 truncate ${field.archived ? 'text-muted line-through' : 'text-text'}`}>{field.name}</h2>
+          <h2 className={`font-mono text-xs md:text-sm font-bold flex-1 truncate ${field.archived ? 'text-muted line-through' : 'text-text'}`}>{field.name}</h2>
           {field.archived && (
             <span className="font-mono text-[9px] px-1.5 py-0.5 border border-amber text-amber uppercase tracking-[1px]">Archivée</span>
           )}
@@ -63,7 +63,7 @@ export function FieldDetailPanel() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-3 md:p-5">
           {tab === 'info' && <InfoTab />}
           {tab === 'culture' && <CultureTab />}
           {tab === 'watering' && <WateringTab />}
@@ -361,12 +361,18 @@ function StatCard({ label, value }: { label: string; value: string }) {
 //  CULTURE
 // ═══════════════════════════════════════
 
+const DEFAULT_CALI_STRAINS = ['Cali Water', 'Mochi Coco', 'One Hitter', 'Yuzu']
+
 function CultureTab() {
   const field = useField()
   const updateField = useAppStore((s) => s.updateField)
-  const strains = useAppStore((s) => s.strains)
+  const userStrains = useAppStore((s) => s.strains)
   const seedType = field.culture?.seedType || 'beldia'
   const strain = field.culture?.strain || ''
+  const [customStrain, setCustomStrain] = useState('')
+
+  // Merge default strains + user-added strains (deduplicated)
+  const allStrains = [...new Set([...DEFAULT_CALI_STRAINS, ...userStrains])]
 
   return (
     <div className="space-y-4">
@@ -382,13 +388,29 @@ function CultureTab() {
       {seedType === 'cali' && (
         <div>
           <Label>Strain</Label>
-          <select value={strain}
-            onChange={(e) => updateField(field.id, { culture: { seedType: 'cali', strain: e.target.value } })}
+          <select value={allStrains.includes(strain) ? strain : (strain ? '__custom' : '')}
+            onChange={(e) => {
+              if (e.target.value === '__custom') { setCustomStrain(strain); return }
+              updateField(field.id, { culture: { seedType: 'cali', strain: e.target.value } })
+            }}
             className="w-full font-mono text-xs bg-bg border border-border text-text py-2 px-3 outline-none focus:border-olive-lit">
             <option value="">— Choisir —</option>
-            {strains.map((s) => <option key={s} value={s}>{s}</option>)}
+            {allStrains.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="__custom">Custom...</option>
           </select>
-          {!strains.length && <p className="text-[10px] text-muted mt-1">Ajoutez des strains dans le Dashboard → Cultures</p>}
+          {(strain && !allStrains.includes(strain)) || customStrain !== '' ? (
+            <div className="flex gap-2 mt-1.5">
+              <input type="text" value={customStrain || strain} onChange={(e) => setCustomStrain(e.target.value)}
+                placeholder="Nom de la strain" autoFocus
+                className="flex-1 font-mono text-xs bg-bg border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit placeholder:text-muted" />
+              <button className="btn-sm btn-active text-[10px]" onClick={() => {
+                if (customStrain.trim()) {
+                  updateField(field.id, { culture: { seedType: 'cali', strain: customStrain.trim() } })
+                  setCustomStrain('')
+                }
+              }}>✓</button>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
@@ -1035,32 +1057,45 @@ function BatchesTab() {
           </>)}
 
           {step === 2 && (<>
-            {/* Step 2: Plaques */}
-            <div className="font-mono text-[10px] text-text">
-              <span className="text-amber">{bName}</span> · {bStrain} · {bSeeds} graines
+            {/* Step 2: Plaques — auto-calculated */}
+            <div className="bg-panel border border-border p-2.5 mb-1">
+              <div className="font-mono text-[10px] text-text">
+                <span className="text-amber font-bold">{bName}</span> · <span className="text-cyan">{bStrain}</span> · <span className="text-olive-lit font-bold">{bSeeds} graines</span>
+              </div>
             </div>
-            <div className="font-mono text-[8px] text-muted uppercase mb-1">Choisissez la taille des plaques</div>
-            <div className="flex flex-wrap gap-1.5">
-              {PLAQUE_PRESETS.map((pr, i) => (
-                <button key={pr.label} onClick={() => setBPlaquePreset(i)}
-                  className={`font-mono text-[10px] px-3 py-1.5 border cursor-pointer transition-all ${bPlaquePreset === i ? 'bg-olive border-olive-lit text-white' : 'bg-panel border-border text-muted hover:text-text'}`}>
-                  {pr.label}
-                </button>
-              ))}
+
+            <div className="font-mono text-[9px] text-muted uppercase tracking-[1px]">Type de plaque</div>
+            <div className="grid grid-cols-2 gap-2">
+              {PLAQUE_PRESETS.map((pr, i) => {
+                const needed = Math.ceil(bSeeds / (pr.rows * pr.cols))
+                return (
+                  <button key={pr.label} onClick={() => { setBPlaquePreset(i); setBPlaqueCount(needed) }}
+                    className={`text-left p-2.5 border cursor-pointer transition-all ${bPlaquePreset === i ? 'bg-olive/20 border-olive-lit' : 'bg-panel border-border hover:border-olive-lit/50'}`}>
+                    <div className="font-mono text-[11px] text-text font-bold">{pr.label}</div>
+                    <div className="font-mono text-[9px] text-muted">{pr.rows} lignes × {pr.cols} colonnes</div>
+                    <div className="font-mono text-[9px] text-olive-lit mt-0.5">→ {needed} plaque{needed > 1 ? 's' : ''} nécessaire{needed > 1 ? 's' : ''}</div>
+                  </button>
+                )
+              })}
             </div>
-            <div>
-              <div className="font-mono text-[8px] text-muted uppercase mb-0.5">Combien de plaques ?</div>
-              <input type="number" min={1} max={200} value={bPlaqueCount} onChange={(e) => setBPlaqueCount(parseInt(e.target.value) || 1)}
-                className="w-full font-mono text-xs bg-panel border border-border text-text py-1.5 px-2 outline-none focus:border-olive-lit" />
-            </div>
-            <div className="bg-panel border border-border p-2.5 space-y-1">
-              <div className="font-mono text-[10px] text-olive-lit">Résumé :</div>
-              <div className="font-mono text-[10px] text-text">{bPlaqueCount} plaque{bPlaqueCount > 1 ? 's' : ''} de {alveolesPerPlaque} alvéoles ({selectedPreset.rows}×{selectedPreset.cols})</div>
-              <div className="font-mono text-[10px] text-text">= {totalAlveoles} alvéoles au total</div>
-              <div className={`font-mono text-[10px] ${totalAlveoles >= bSeeds ? 'text-olive-lit' : 'text-amber'}`}>
+
+            <div className="bg-olive/10 border border-olive-lit/40 p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="font-mono text-[10px] text-olive-lit font-bold">
+                  {bPlaqueCount} plaque{bPlaqueCount > 1 ? 's' : ''} × {alveolesPerPlaque} alvéoles = {totalAlveoles} places
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setBPlaqueCount(Math.max(1, bPlaqueCount - 1))}
+                    className="w-6 h-6 font-mono text-sm bg-panel border border-border text-text flex items-center justify-center cursor-pointer hover:border-olive-lit">−</button>
+                  <span className="font-mono text-sm text-text w-6 text-center">{bPlaqueCount}</span>
+                  <button onClick={() => setBPlaqueCount(bPlaqueCount + 1)}
+                    className="w-6 h-6 font-mono text-sm bg-panel border border-border text-text flex items-center justify-center cursor-pointer hover:border-olive-lit">+</button>
+                </div>
+              </div>
+              <div className={`font-mono text-[10px] font-bold ${totalAlveoles >= bSeeds ? 'text-olive-lit' : 'text-red'}`}>
                 {totalAlveoles >= bSeeds
-                  ? `✓ Suffisant pour ${bSeeds} graines (${totalAlveoles - bSeeds} vide${totalAlveoles - bSeeds > 1 ? 's' : ''})`
-                  : `⚠ ${bSeeds - totalAlveoles} graine${bSeeds - totalAlveoles > 1 ? 's' : ''} sans place — ajoutez des plaques`}
+                  ? `✓ ${bSeeds} graines placées · ${totalAlveoles - bSeeds} alvéole${totalAlveoles - bSeeds > 1 ? 's' : ''} vide${totalAlveoles - bSeeds > 1 ? 's' : ''}`
+                  : `✕ Il manque ${bSeeds - totalAlveoles} place${bSeeds - totalAlveoles > 1 ? 's' : ''} — ajoutez des plaques`}
               </div>
             </div>
             <div className="flex gap-2 pt-1">
