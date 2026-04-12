@@ -111,6 +111,7 @@ function ChampCard({ champ }: { champ: Champ }) {
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(champ.name)
   const [assigning, setAssigning] = useState(false)
+  const [selectedParcelleIds, setSelectedParcelleIds] = useState<number[]>([])
   const allFields = useAppStore((s) => s.fields).filter((f) => !f.archived)
   const selectedFieldId = useAppStore((s) => s.selectedFieldId)
   const selectField = useAppStore((s) => s.selectField)
@@ -148,8 +149,6 @@ function ChampCard({ champ }: { champ: Champ }) {
 
   const handleAssignParcelle = (fieldId: number) => {
     useAppStore.getState().addParcelleToChamp(champ.id, fieldId)
-    renderChampOnMap(champ.id)
-    useAppStore.getState().toast(`✓ Parcelle ajoutée au champ`)
   }
 
   const handleRemoveParcelle = (fieldId: number) => {
@@ -209,8 +208,8 @@ function ChampCard({ champ }: { champ: Champ }) {
                     onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawForChampId(champ.id); useAppStore.getState().setDrawTarget('field'); useAppStore.getState().setStatus(`DESSIN PARCELLE pour "${champ.name}" — cliquez les sommets`) }}>
                     ▭ Dessiner
                   </button>
-                  <button className="btn-sm btn-cyan text-[10px]" title="Assigner une parcelle existante"
-                    onClick={(e) => { e.stopPropagation(); setAssigning(!assigning) }}>⊕ Existante</button>
+                  <button className="btn-sm btn-cyan text-[10px]" title="Assigner des parcelles existantes"
+                    onClick={(e) => { e.stopPropagation(); if (!assigning) setSelectedParcelleIds([]); setAssigning(!assigning) }}>⊕ Existantes</button>
                   <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"
                     onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'champ', champId: champ.id }) }}>✎ Contour</button>
                   {champ.customOutline && (
@@ -226,15 +225,39 @@ function ChampCard({ champ }: { champ: Champ }) {
 
           {assigning && freeParcelles.length > 0 && (
             <div className="mb-2 p-1.5 bg-bg border border-amber/30 space-y-1">
-              <div className="font-mono text-[9px] text-amber uppercase tracking-[1px]">Parcelles disponibles</div>
-              {freeParcelles.map((f) => (
-                <button key={f.id}
-                  className="w-full text-left font-mono text-[10px] text-text py-1 px-2 bg-panel border border-border hover:border-amber hover:bg-amber/10 cursor-pointer transition-all flex items-center gap-2"
-                  onClick={() => { handleAssignParcelle(f.id); setAssigning(false) }}>
-                  <div className="w-2 h-2 rounded-full" style={{ background: f.color }} />
-                  {f.name} — {f.area.toFixed(2)} ha
+              <div className="font-mono text-[9px] text-amber uppercase tracking-[1px]">Parcelles disponibles — sélectionnez puis validez</div>
+              {freeParcelles.map((f) => {
+                const selected = selectedParcelleIds.includes(f.id)
+                return (
+                  <button key={f.id}
+                    className={`w-full text-left font-mono text-[10px] text-text py-1 px-2 border cursor-pointer transition-all flex items-center gap-2 ${
+                      selected ? 'bg-amber/20 border-amber' : 'bg-panel border-border hover:border-amber hover:bg-amber/10'
+                    }`}
+                    onClick={() => setSelectedParcelleIds((prev) => selected ? prev.filter((id) => id !== f.id) : [...prev, f.id])}>
+                    <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] shrink-0 ${
+                      selected ? 'bg-amber border-amber text-black font-bold' : 'border-muted'
+                    }`}>{selected ? '✓' : ''}</div>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: f.color }} />
+                    {f.name} — {f.area.toFixed(2)} ha
+                  </button>
+                )
+              })}
+              <div className="flex gap-1 pt-1">
+                <button className="btn-sm btn-amber flex-1 text-[10px]" disabled={selectedParcelleIds.length === 0}
+                  onClick={() => {
+                    selectedParcelleIds.forEach((id) => handleAssignParcelle(id))
+                    renderChampOnMap(champ.id)
+                    useAppStore.getState().toast(`✓ ${selectedParcelleIds.length} parcelle${selectedParcelleIds.length > 1 ? 's' : ''} ajoutée${selectedParcelleIds.length > 1 ? 's' : ''}`)
+                    setSelectedParcelleIds([])
+                    setAssigning(false)
+                  }}>
+                  ✓ Valider ({selectedParcelleIds.length})
                 </button>
-              ))}
+                <button className="btn-sm btn-danger text-[10px]"
+                  onClick={() => { setSelectedParcelleIds([]); setAssigning(false) }}>
+                  Annuler
+                </button>
+              </div>
             </div>
           )}
           {assigning && freeParcelles.length === 0 && (
