@@ -269,11 +269,9 @@ function DeleteAccountSection() {
     try {
       const { supabase } = await import('../lib/supabase')
       if (supabase) {
-        // Supprimer les données utilisateur (RLS autorise)
-        await supabase.from('user_data').delete().eq('user_id', user.id)
-        // Supprimer le compte auth via Edge Function
-        const { error } = await supabase.functions.invoke('delete-user')
-        if (error) console.warn('Edge function delete-user failed:', error.message)
+        // Supprimer données + compte auth via fonction SQL security definer
+        const { error } = await supabase.rpc('delete_own_account')
+        if (error) throw new Error(error.message)
       }
       clearStorage()
       useAppStore.getState().clearAll()
