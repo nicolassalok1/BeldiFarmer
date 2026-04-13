@@ -12,11 +12,25 @@ import type { LatLng, Field, UserLocation, Champ } from '../types'
 // Module-level ref so other components can interact with the map programmatically.
 // Use getMap() to access it — don't read `globalMap` directly from other modules.
 let globalMap: L.Map | null = null
+let globalDrawHandler: L.Draw.Polygon | null = null
 // Guards against React StrictMode double-mount duplicating persisted data into the store.
 let persistedDataRestored = false
 
 export function getMap(): L.Map | null {
   return globalMap
+}
+
+/** Complete the current draw (validate the polygon). Called from Header. */
+export function finishDraw(): void {
+  if (globalDrawHandler) {
+    try { (globalDrawHandler as any).completeShape() } catch { /* not enough points */ }
+  }
+}
+
+/** Cancel the current draw. Called from Header. */
+export function cancelDraw(): void {
+  useAppStore.getState().setDrawTarget(null)
+  useAppStore.getState().setStatus('EN ATTENTE')
 }
 
 export function addPointFromCoords(fieldId: number, lat: number, lng: number, notes?: string): { ok: boolean; error?: string } {
@@ -272,6 +286,7 @@ export function MapView() {
       })
       handler.enable()
       drawHandlerRef.current = handler
+      globalDrawHandler = handler
     } else if (drawTarget === 'field') {
       containerRef.current?.classList.add('cursor-crosshair')
       const store = useAppStore.getState()
@@ -281,8 +296,10 @@ export function MapView() {
       })
       handler.enable()
       drawHandlerRef.current = handler
+      globalDrawHandler = handler
     } else {
       containerRef.current?.classList.remove('cursor-crosshair')
+      globalDrawHandler = null
     }
   }, [drawTarget])
 
@@ -388,6 +405,7 @@ export function MapView() {
     if (drawHandlerRef.current) {
       try { drawHandlerRef.current.disable() } catch { /* ignore */ }
       drawHandlerRef.current = null
+      globalDrawHandler = null
     }
   }
 
