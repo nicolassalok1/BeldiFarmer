@@ -52,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     })
     if (error) return { error: error.message }
-    console.log('signUp response:', JSON.stringify({ identities: data.user?.identities, confirmed_at: data.user?.confirmed_at, id: data.user?.id }, null, 2))
+    if (data.user && data.user.identities?.length === 0) {
+      return { error: 'Un compte existe déjà avec cet email.' }
+    }
     return { error: null }
   }
 
