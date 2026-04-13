@@ -53,7 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     if (error) return { error: error.message }
     // Supabase returns a user with empty identities when the email already exists
-    if (data.user && data.user.identities?.length === 0) {
+    // BUT also when "Confirm email" is on and user hasn't confirmed yet
+    // So we check if the user was actually created (has confirmed_at or identities)
+    if (data.user && data.user.identities?.length === 0 && data.user.confirmed_at) {
       return { error: 'Un compte existe déjà avec cet email.' }
     }
     return { error: null }
