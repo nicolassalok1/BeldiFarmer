@@ -275,17 +275,6 @@ function ChampCard({ champ }: { champ: Champ }) {
                 </button>
               ) : (
                 <>
-                  <div className="w-full border border-border bg-bg/40 p-1.5 mb-1">
-                    <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1.5px] mb-1.5">Ajouter une nouvelle parcelle</div>
-                    <div className="flex gap-1">
-                      <button className="btn-sm btn-active flex-1 text-[10px]" title="Dessiner une nouvelle parcelle dans ce champ"
-                        onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawForChampId(champ.id); useAppStore.getState().setDrawTarget('field'); useAppStore.getState().setStatus(`DESSIN PARCELLE pour "${champ.name}" — cliquez les sommets`); useAppStore.getState().setSidebarOpen(false) }}>
-                        ▭ Dessiner
-                      </button>
-                      <button className="btn-sm btn-cyan flex-1 text-[10px]" title="Assigner des parcelles existantes"
-                        onClick={(e) => { e.stopPropagation(); if (!assigning) setSelectedParcelleIds([]); setAssigning(!assigning) }}>⊕ Existantes</button>
-                    </div>
-                  </div>
                   <button className="btn-sm btn-cyan text-[10px]" title="Renommer le champ"
                     onClick={(e) => { e.stopPropagation(); setEditName(champ.name); setEditing(true) }}>✎ Renommer</button>
                   <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"
@@ -296,6 +285,17 @@ function ChampCard({ champ }: { champ: Champ }) {
                   )}
                   <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
                     onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
+                  <div className="w-full border border-border bg-bg/40 p-1.5 mt-1">
+                    <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1.5px] mb-1.5">Ajouter une nouvelle parcelle</div>
+                    <div className="flex gap-1">
+                      <button className="btn-sm btn-active flex-1 text-[10px]" title="Dessiner une nouvelle parcelle dans ce champ"
+                        onClick={(e) => { e.stopPropagation(); useAppStore.getState().setDrawForChampId(champ.id); useAppStore.getState().setDrawTarget('field'); useAppStore.getState().setStatus(`DESSIN PARCELLE pour "${champ.name}" — cliquez les sommets`); useAppStore.getState().setSidebarOpen(false) }}>
+                        ▭ Dessiner
+                      </button>
+                      <button className="btn-sm btn-cyan flex-1 text-[10px]" title="Assigner des parcelles existantes"
+                        onClick={(e) => { e.stopPropagation(); if (!assigning) setSelectedParcelleIds([]); setAssigning(!assigning) }}>⊕ Existantes</button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -776,8 +776,12 @@ function SerreCard({ champ }: { champ: Champ }) {
               </button>
             ) : (
               <>
+                <button className="btn-sm btn-cyan text-[10px]" title="Renommer"
+                  onClick={(e) => { e.stopPropagation(); setEditName(champ.name); setEditing(true) }}>✎ Renommer</button>
+                <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
+                  onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
                 {info.status !== 'transfere' && (
-                  <div className="w-full border border-border bg-bg/40 p-1.5 mb-1">
+                  <div className="w-full border border-border bg-bg/40 p-1.5 mt-1">
                     <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1.5px] mb-1.5">Ajouter une parcelle</div>
                     <div className="flex gap-1">
                       <button className="btn-sm btn-active flex-1 text-[10px]" title="Dessiner une nouvelle parcelle"
@@ -789,10 +793,6 @@ function SerreCard({ champ }: { champ: Champ }) {
                     </div>
                   </div>
                 )}
-                <button className="btn-sm btn-cyan text-[10px]" title="Renommer"
-                  onClick={(e) => { e.stopPropagation(); setEditName(champ.name); setEditing(true) }}>✎ Renommer</button>
-                <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
-                  onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
               </>
             )}
           </div>
