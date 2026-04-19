@@ -35,7 +35,7 @@ export function Header() {
   const currentLang = LANGS.find((l) => l.code === i18n.language) ?? LANGS[0]
 
   return (
-    <header className="col-span-full bg-panel border-b border-border flex items-center gap-2 md:gap-4 px-3 md:px-5 h-[48px] md:h-[52px]">
+    <header className="col-span-full bg-panel border-b border-border flex items-center gap-2 md:gap-4 px-3 md:px-5 h-[calc(48px+env(safe-area-inset-top,0px))] md:h-[52px] pt-[env(safe-area-inset-top,0px)] md:pt-0">
       <button
         onClick={toggleSidebar}
         className={`font-mono text-[13px] border w-9 h-9 md:w-7 md:h-7 flex items-center justify-center cursor-pointer transition-all shrink-0
@@ -70,15 +70,17 @@ export function Header() {
         <>
           <button
             onClick={() => setDashboardOpen(true)}
+            title="Dashboard"
             className="font-mono text-[10px] md:text-[11px] tracking-[1px] uppercase bg-amber/10 border border-amber text-amber px-2 md:px-3 py-1 cursor-pointer hover:bg-amber hover:text-black transition-all flex items-center gap-1 h-8 md:h-auto"
           >
-            <span className="text-xs">◈</span> Dashboard
+            <span className="text-xs">◈</span> <span className="hidden md:inline">Dashboard</span>
           </button>
           <button
             onClick={() => setCalendarOpen(true)}
+            title="Agenda"
             className="font-mono text-[10px] md:text-[11px] tracking-[1px] uppercase bg-cyan/10 border border-cyan text-cyan px-2 md:px-3 py-1 cursor-pointer hover:bg-cyan hover:text-black transition-all flex items-center gap-1 h-8 md:h-auto"
           >
-            <span className="text-xs">◰</span> Agenda
+            <span className="text-xs">◰</span> <span className="hidden md:inline">Agenda</span>
           </button>
         </>
       )}

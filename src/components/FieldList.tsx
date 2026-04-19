@@ -280,11 +280,11 @@ function ChampCard({ champ }: { champ: Champ }) {
                   <button className="btn-sm btn-amber text-[10px]" title="Modifier le contour"
                     onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'champ', champId: champ.id }); useAppStore.getState().setSidebarOpen(false); useAppStore.getState().setMobileRightOpen(false) }}>✎ Contour</button>
                   {champ.customOutline && (
-                    <button className="btn-sm btn-cyan text-[10px]" title="Recalculer auto"
-                      onClick={(e) => { e.stopPropagation(); useAppStore.getState().setChampCustomOutline(champ.id, undefined); renderChampOnMap(champ.id); useAppStore.getState().toast(`✓ Contour recalculé`) }}>↻ Auto</button>
+                    <button className="btn-sm btn-cyan text-[10px]" title="Recalculer automatiquement le contour à partir des parcelles"
+                      onClick={(e) => { e.stopPropagation(); useAppStore.getState().setChampCustomOutline(champ.id, undefined); renderChampOnMap(champ.id); useAppStore.getState().toast(`✓ Contour recalculé`) }}>↻ Contour auto</button>
                   )}
-                  <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
-                    onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
+                  <button className="btn-sm btn-danger text-[10px]" title="Supprimer ce champ (les parcelles restent)"
+                    onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕ Supprimer</button>
                   <div className="w-full border border-border bg-bg/40 p-1.5 mt-1">
                     <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1.5px] mb-1.5">Ajouter une nouvelle parcelle</div>
                     <div className="flex gap-1">
@@ -477,16 +477,16 @@ function FieldCard({ field: f, isSelected, onSelect, champId, onRemoveFromChamp 
               <button className="btn-sm btn-amber"
                 onClick={(e) => { e.stopPropagation(); useAppStore.getState().setAddPointFieldId(f.id); useAppStore.getState().setSidebarOpen(false); useAppStore.getState().setMobileRightOpen(false) }}>⊕ Point</button>
             )}
-            <button className="btn-sm btn-cyan" title="Détails"
-              onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>◈</button>
-            <button className="btn-sm btn-cyan text-[10px]" title="Renommer"
-              onClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}>✎ Nom</button>
-            <button className="btn-sm btn-amber" title="Modifier contour"
-              onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }); useAppStore.getState().setSidebarOpen(false); useAppStore.getState().setMobileRightOpen(false) }}>✎</button>
-            <button className="btn-sm btn-cyan" title="Archiver"
-              onClick={(e) => { e.stopPropagation(); setArchiveOpen(true) }}>◱</button>
+            <button className="btn-sm btn-cyan text-[10px]" title="Ouvrir la fiche détaillée de la parcelle"
+              onClick={(e) => { e.stopPropagation(); useAppStore.getState().openFieldDetail(f.id) }}>◈ Détails</button>
+            <button className="btn-sm btn-cyan text-[10px]" title="Renommer la parcelle"
+              onClick={(e) => { e.stopPropagation(); setEditName(f.name); setEditing(true) }}>✎ Renommer</button>
+            <button className="btn-sm btn-amber text-[10px]" title="Modifier le tracé du contour sur la carte"
+              onClick={(e) => { e.stopPropagation(); useAppStore.getState().setEditTarget({ type: 'field', fieldId: f.id }); useAppStore.getState().setSidebarOpen(false); useAppStore.getState().setMobileRightOpen(false) }}>✎ Contour</button>
+            <button className="btn-sm btn-cyan text-[10px]" title="Archiver la parcelle"
+              onClick={(e) => { e.stopPropagation(); setArchiveOpen(true) }}>◱ Archiver</button>
             {onRemoveFromChamp && (
-              <button className="btn-sm btn-danger text-[10px] ml-auto" title="Retirer du champ"
+              <button className="btn-sm btn-danger text-[10px] ml-auto" title="Retirer la parcelle de ce champ (la parcelle est conservée)"
                 onClick={(e) => { e.stopPropagation(); onRemoveFromChamp() }}>↗ Retirer</button>
             )}
           </>
@@ -776,10 +776,10 @@ function SerreCard({ champ }: { champ: Champ }) {
               </button>
             ) : (
               <>
-                <button className="btn-sm btn-cyan text-[10px]" title="Renommer"
+                <button className="btn-sm btn-cyan text-[10px]" title="Renommer la serre"
                   onClick={(e) => { e.stopPropagation(); setEditName(champ.name); setEditing(true) }}>✎ Renommer</button>
-                <button className="btn-sm btn-danger text-[10px]" title="Supprimer"
-                  onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕</button>
+                <button className="btn-sm btn-danger text-[10px]" title="Supprimer cette serre (les parcelles restent)"
+                  onClick={(e) => { e.stopPropagation(); handleDelete() }}>✕ Supprimer</button>
                 {info.status !== 'transfere' && (
                   <div className="w-full border border-border bg-bg/40 p-1.5 mt-1">
                     <div className="font-mono text-[9px] text-olive-lit uppercase tracking-[1.5px] mb-1.5">Ajouter une parcelle</div>
