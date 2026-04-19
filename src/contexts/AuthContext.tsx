@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { setCurrentUserId, clearStorage } from '../utils/persistence'
 import type { User, Session } from '@supabase/supabase-js'
 
-interface AuthState {
+export interface AuthState {
   user: User | null
   session: Session | null
   loading: boolean

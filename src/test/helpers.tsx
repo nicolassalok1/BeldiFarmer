@@ -73,7 +73,8 @@ export function renderWithProviders(ui: ReactElement, opts: { auth?: FakeAuth } 
   const auth = opts.auth ?? buildFakeAuth()
   const wrapped: ReactNode = (
     <I18nextProvider i18n={i18n}>
-      <AuthContext.Provider value={auth}>{ui}</AuthContext.Provider>
+      {/* Cast: vi.fn() mocks don't match the strict AuthState function signatures */}
+      <AuthContext.Provider value={auth as unknown as import('../contexts/AuthContext').AuthState}>{ui}</AuthContext.Provider>
     </I18nextProvider>
   )
   return { ...render(wrapped), auth }
