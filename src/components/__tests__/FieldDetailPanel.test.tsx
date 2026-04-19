@@ -165,6 +165,53 @@ describe('FieldDetailPanel — tab switching', () => {
   })
 })
 
+describe('FieldDetailPanel — BatchesTab', () => {
+  function openSerreWithBatchTab() {
+    useAppStore.setState({
+      fields: [makeField(1, { champId: 10 })],
+      champs: [makeSerre(10, { parcelleIds: [1] })],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'batches',
+    })
+  }
+
+  it('shows the Germination heading', () => {
+    openSerreWithBatchTab()
+    renderWithI18n(<FieldDetailPanel />)
+    // "Germination" appears both as tab label and tab heading
+    expect(screen.getAllByText(/Germination/i).length).toBeGreaterThan(0)
+  })
+
+  it('shows empty state + "+ Nouveau batch" when serre has no batches', () => {
+    openSerreWithBatchTab()
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByText(/Aucun batch/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Nouveau batch/i })).toBeInTheDocument()
+  })
+
+  it('opens the wizard step 1 when "+ Nouveau batch" is clicked', async () => {
+    openSerreWithBatchTab()
+    const user = userEvent.setup()
+    renderWithI18n(<FieldDetailPanel />)
+    await user.click(screen.getByRole('button', { name: /Nouveau batch/i }))
+    expect(screen.getByText(/Étape 1\/2/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/ex: Lot A/i)).toBeInTheDocument()
+  })
+
+  it('hides "+ Nouveau batch" on archived serres', () => {
+    useAppStore.setState({
+      fields: [makeField(1, { champId: 10, archived: true })],
+      champs: [makeSerre(10, { parcelleIds: [1] })],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'batches',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.queryByRole('button', { name: /Nouveau batch/i })).toBeNull()
+  })
+})
+
 describe('FieldDetailPanel — serre climate measures', () => {
   function openSerreField() {
     useAppStore.setState({
