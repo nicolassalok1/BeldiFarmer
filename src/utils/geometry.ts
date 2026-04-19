@@ -1,5 +1,5 @@
 import turfUnion from '@turf/union'
-import { polygon as turfPolygon } from '@turf/helpers'
+import { polygon as turfPolygon, featureCollection as turfFeatureCollection } from '@turf/helpers'
 import type { Feature, Polygon, MultiPolygon } from 'geojson'
 import type { LatLng } from '../types'
 
@@ -111,15 +111,13 @@ export function computeChampOutlineMulti(parcellePolygons: LatLng[][]): LatLng[]
       return turfPolygon([ring])
     })
 
-    // Union all parcelle polygons directly — the outline follows
-    // each parcelle's exact border. Disjoint parcelles stay as
-    // separate parts in a MultiPolygon.
-    let merged: Feature<Polygon | MultiPolygon> = turfPolys[0]
-    for (let i = 1; i < turfPolys.length; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = (turfUnion as any)(merged, turfPolys[i])
-      if (result) merged = result
-    }
+    // Union all parcelle polygons — the outline follows each parcelle's
+    // exact border. Disjoint parcelles stay as separate parts in a
+    // MultiPolygon. Turf v7 requires a FeatureCollection; the legacy
+    // two-argument call throws "Must have at least 2 geometries".
+    const fc = turfFeatureCollection(turfPolys)
+    const unionResult = turfUnion(fc) as Feature<Polygon | MultiPolygon> | null
+    const merged: Feature<Polygon | MultiPolygon> = unionResult ?? turfPolys[0]
 
     // Extract all outer rings (handles both Polygon and MultiPolygon)
     const allRings: number[][][] = merged.geometry.type === 'MultiPolygon'
