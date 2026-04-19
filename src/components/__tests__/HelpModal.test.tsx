@@ -16,7 +16,7 @@ describe('HelpModal', () => {
   it('renders the title when helpOpen is true', () => {
     useAppStore.setState({ helpOpen: true })
     const { getByRole } = renderWithI18n(<HelpModal />)
-    expect(getByRole('heading', { level: 2 })).toHaveTextContent(/ANRAC/)
+    expect(getByRole('heading', { level: 2 })).toHaveTextContent(/BELDIFARMER/)
   })
 
   it('closes when the X button is clicked', async () => {

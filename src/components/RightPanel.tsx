@@ -47,12 +47,12 @@ export function RightPanel() {
       {/* ── Mobile: FAB + bottom sheet ── */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-[calc(60px+env(safe-area-inset-top,0px))] right-3 z-[800] bg-orange-500 text-white w-12 h-12 rounded-full shadow-lg shadow-orange-500/40 flex items-center justify-center active:scale-95 transition-transform border-2 border-white/30"
+        aria-label="Afficher la liste des parcelles, champs et serres"
+        className="md:hidden fixed top-[calc(60px+env(safe-area-inset-top,0px))] right-3 z-[800] bg-orange-500 text-white h-11 pl-3 pr-3.5 rounded-full shadow-lg shadow-orange-500/40 flex items-center gap-2 active:scale-95 transition-transform border-2 border-white/30 font-mono"
       >
-        <span className="text-[11px] font-mono leading-none text-center">
-          {fields.length}<br />
-          <span className="text-[8px] opacity-80">zones</span>
-        </span>
+        <span className="text-base leading-none">▤</span>
+        <span className="text-[11px] font-bold leading-none uppercase tracking-wider">Parcelles</span>
+        <span className="text-[10px] opacity-80 leading-none">({fields.length})</span>
       </button>
 
       {mobileOpen && (

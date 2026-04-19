@@ -7,7 +7,7 @@ import { renderWithProviders, buildFakeAuth } from '../../test/helpers'
 describe('AuthPage — login (default) mode', () => {
   it('renders login form with brand', () => {
     renderWithProviders(<AuthPage />)
-    expect(screen.getByText('ANRAC')).toBeInTheDocument()
+    expect(screen.getByText('BeldiFarmer')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Se connecter/i })).toBeInTheDocument()
   })
 

@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "تدبير الضيعة و أخذ العينات",
-    "brand": "ANRAC",
-    "subtitle": "أخذ العينات GPS",
-    "footer": "ANRAC — نظام أخذ العينات",
+    "title": "تدبير الضيعة الفلاحية",
+    "brand": "BeldiFarmer",
+    "subtitle": "تدبير فلاحي",
+    "footer": "BeldiFarmer — تدبير فلاحي",
     "loading": "جاري التحميل..."
   },
   "auth": {

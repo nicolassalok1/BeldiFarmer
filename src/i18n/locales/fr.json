@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Gestion Exploitation & Prélèvements",
-    "brand": "ANRAC",
-    "subtitle": "Prélèvements GPS",
-    "footer": "ANRAC — Système de prélèvements",
+    "title": "Gestion d'exploitation agricole",
+    "brand": "BeldiFarmer",
+    "subtitle": "Gestion agricole",
+    "footer": "BeldiFarmer — Gestion agricole",
     "loading": "Chargement..."
   },
   "auth": {

@@ -1,7 +1,7 @@
 {
-  "name": "ANRAC Prélèvements GPS",
-  "short_name": "ANRAC GPS",
-  "description": "Gestion exploitation agricole et points de prélèvement GPS",
+  "name": "BeldiFarmer",
+  "short_name": "BeldiFarmer",
+  "description": "Gestion d'exploitation agricole — cartographie, activités, relief et prélèvements GPS",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d1117",

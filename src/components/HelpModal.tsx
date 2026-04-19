@@ -25,7 +25,7 @@ export function HelpModal() {
         </button>
 
         <h2 className="font-mono text-sm text-olive-lit tracking-[2px] mb-1 pr-8">
-          ANRAC — GESTION EXPLOITATION
+          BELDIFARMER — GESTION EXPLOITATION
         </h2>
         <p className="text-[12px] text-muted leading-relaxed mb-5">
           Outil de gestion de terrain : cartographie des zones, suivi des activités
@@ -154,7 +154,7 @@ export function HelpModal() {
         <div className="font-mono text-[10px] text-muted mt-6 pt-3 border-t border-border leading-relaxed">
           React 19 · Vite · Leaflet · Three.js · Zustand · Tailwind CSS<br />
           Données relief : SRTM GL1 30m (Open-Elevation) · Ensoleillement : Open-Meteo Archive<br />
-          Usage interne ANRAC
+          BeldiFarmer — gestion d'exploitation agricole
         </div>
       </div>
     </div>

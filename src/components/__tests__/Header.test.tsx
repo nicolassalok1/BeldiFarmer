@@ -26,8 +26,8 @@ const fakeUser: User = {
 describe('Header — logged-in state', () => {
   it('renders brand + app title', () => {
     renderWithProviders(<Header />, { auth: buildFakeAuth({ user: fakeUser }) })
-    expect(screen.getByText('ANRAC')).toBeInTheDocument()
-    expect(screen.getByText(/Gestion Exploitation/i)).toBeInTheDocument()
+    expect(screen.getByText('BeldiFarmer')).toBeInTheDocument()
+    expect(screen.getByText(/Gestion d'exploitation/i)).toBeInTheDocument()
   })
 
   it('shows Dashboard + Agenda buttons when not drawing', () => {

@@ -20,7 +20,7 @@ export function exportProject(data: PersistedData): boolean {
   if (!data.exploitPolygon && (!data.fields || data.fields.length === 0)) return false
 
   const date = new Date().toISOString().slice(0, 10)
-  download(`projet-anrac-${date}.json`, JSON.stringify(data, null, 2), 'application/json')
+  download(`projet-beldifarmer-${date}.json`, JSON.stringify(data, null, 2), 'application/json')
   return true
 }
 

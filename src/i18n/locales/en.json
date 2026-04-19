@@ -1,9 +1,9 @@
 {
   "app": {
-    "title": "Farm Management & Sampling",
-    "brand": "ANRAC",
-    "subtitle": "GPS Sampling",
-    "footer": "ANRAC — Sampling System",
+    "title": "Farm Management",
+    "brand": "BeldiFarmer",
+    "subtitle": "Farm Management",
+    "footer": "BeldiFarmer — Farm Management",
     "loading": "Loading..."
   },
   "auth": {
