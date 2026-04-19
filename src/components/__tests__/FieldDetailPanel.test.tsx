@@ -165,6 +165,31 @@ describe('FieldDetailPanel — tab switching', () => {
   })
 })
 
+describe('FieldDetailPanel — ReliefTab', () => {
+  it('shows exposition selector + AUTO badge when relief is auto-computed', () => {
+    useAppStore.setState({
+      fields: [makeField(1, { relief: { exposition: 'sud', autoComputed: true, slope: 3 } })],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'relief',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByText(/AUTO/)).toBeInTheDocument()
+    expect(screen.getByText(/Exposition/)).toBeInTheDocument()
+  })
+
+  it('shows MANUEL badge when user has edited relief', () => {
+    useAppStore.setState({
+      fields: [makeField(1, { relief: { exposition: 'nord', autoComputed: false } })],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'relief',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByText(/MANUEL/)).toBeInTheDocument()
+  })
+})
+
 describe('FieldDetailPanel — SoilTab', () => {
   it('shows the new-analysis form and empty list', () => {
     useAppStore.setState({
