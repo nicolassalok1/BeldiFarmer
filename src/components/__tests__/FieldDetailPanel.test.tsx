@@ -165,6 +165,35 @@ describe('FieldDetailPanel — tab switching', () => {
   })
 })
 
+describe('FieldDetailPanel — CultureTab', () => {
+  it('defaults seed type to beldia', () => {
+    useAppStore.setState({
+      fields: [makeField(1)],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'culture',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    const select = screen.getByRole('combobox') as HTMLSelectElement
+    expect(select.value).toBe('beldia')
+  })
+
+  it('shows the default Cali strains list when seedType is cali', async () => {
+    useAppStore.setState({
+      fields: [makeField(1, { culture: { seedType: 'cali', strain: 'Cali Water' } })],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'culture',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    // Default strains per CLAUDE.md: Cali Water, Mochi Coco, One Hitter, Yuzu
+    expect(screen.getByRole('option', { name: 'Cali Water' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Mochi Coco' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'One Hitter' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Yuzu' })).toBeInTheDocument()
+  })
+})
+
 describe('FieldDetailPanel — WateringTab', () => {
   it('shows quick-add button + empty state on a clean field', () => {
     useAppStore.setState({
