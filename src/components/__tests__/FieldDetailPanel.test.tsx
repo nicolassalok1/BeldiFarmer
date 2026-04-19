@@ -165,6 +165,65 @@ describe('FieldDetailPanel — tab switching', () => {
   })
 })
 
+describe('FieldDetailPanel — WateringTab', () => {
+  it('shows quick-add button + empty state on a clean field', () => {
+    useAppStore.setState({
+      fields: [makeField(1)],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'watering',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByRole('button', { name: /Nouvelle arrosage/i })).toBeInTheDocument()
+  })
+
+  it('shows legacy watering log when wateringLog entries exist', () => {
+    useAppStore.setState({
+      fields: [makeField(1)],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'watering',
+      wateringLog: [
+        { id: 1, date: '2026-01-01', fieldId: 1, method: 'aspersion', durationMin: 45 },
+      ],
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByText(/Ancien historique \(1\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Aspersion/)).toBeInTheDocument()
+    expect(screen.getByText('45 min')).toBeInTheDocument()
+  })
+})
+
+describe('FieldDetailPanel — AmendmentsTab', () => {
+  it('shows quick-add button + empty state on a clean field', () => {
+    useAppStore.setState({
+      fields: [makeField(1)],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'amendments',
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByRole('button', { name: /Nouvelle engrais/i })).toBeInTheDocument()
+  })
+
+  it('shows legacy amendment log when amendmentLog entries exist', () => {
+    useAppStore.setState({
+      fields: [makeField(1)],
+      selectedFieldId: 1,
+      fieldDetailOpen: true,
+      fieldDetailTab: 'amendments',
+      amendmentLog: [
+        { id: 1, date: '2026-01-01', fieldId: 1, type: 'organique', product: 'Compost', quantityKg: 50 },
+      ],
+    })
+    renderWithI18n(<FieldDetailPanel />)
+    expect(screen.getByText(/Ancien historique \(1\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Organique/)).toBeInTheDocument()
+    expect(screen.getByText('Compost')).toBeInTheDocument()
+    expect(screen.getByText('50 kg')).toBeInTheDocument()
+  })
+})
+
 describe('FieldDetailPanel — ReliefTab', () => {
   it('shows exposition selector + AUTO badge when relief is auto-computed', () => {
     useAppStore.setState({
