@@ -3,7 +3,8 @@ import L from 'leaflet'
 import { useAppStore } from '../store/useAppStore'
 import { computeFieldRelief } from '../utils/terrain-auto'
 import { triggerAutoReliefIfNeeded } from '../utils/relief-background'
-import type { FieldDetailTab, SeedType, IrrigationMethod, AmendmentType, Exposition, BatchStage } from '../types'
+import { useField, Label, Empty, StatCard, IRRIGATION_LABELS, AMENDMENT_LABELS, EXPO_LABELS } from './fieldDetail/shared'
+import type { FieldDetailTab, SeedType, Exposition, BatchStage } from '../types'
 
 const TABS: { key: FieldDetailTab; label: string }[] = [
   { key: 'info', label: 'Infos' },
@@ -15,10 +16,6 @@ const TABS: { key: FieldDetailTab; label: string }[] = [
   { key: 'relief', label: 'Relief' },
   { key: 'batches', label: 'Germination' },
 ]
-
-const IRRIGATION_LABELS: Record<IrrigationMethod, string> = { goutte_a_goutte: 'Goutte à goutte', aspersion: 'Aspersion', gravitaire: 'Gravitaire', manuel: 'Manuel' }
-const AMENDMENT_LABELS: Record<AmendmentType, string> = { organique: 'Organique', mineral: 'Minéral', foliaire: 'Foliaire', correcteur: 'Correcteur' }
-const EXPO_LABELS: Record<Exposition, string> = { nord: '↑ Nord', 'nord-est': '↗ Nord-Est', est: '→ Est', 'sud-est': '↘ Sud-Est', sud: '↓ Sud', 'sud-ouest': '↙ Sud-Ouest', ouest: '← Ouest', 'nord-ouest': '↖ Nord-Ouest', plat: '⊙ Plat' }
 
 export function FieldDetailPanel() {
   const open = useAppStore((s) => s.fieldDetailOpen)
@@ -76,20 +73,6 @@ export function FieldDetailPanel() {
       </div>
     </div>
   )
-}
-
-// Helpers
-function useField() {
-  const fieldId = useAppStore((s) => s.selectedFieldId)!
-  return useAppStore((s) => s.fields.find((f) => f.id === fieldId))!
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return <div className="font-mono text-[9px] text-muted uppercase tracking-[1px] mb-1">{children}</div>
-}
-
-function Empty({ text }: { text: string }) {
-  return <div className="text-center text-muted text-xs py-6">{text}</div>
 }
 
 // ═══════════════════════════════════════
@@ -344,15 +327,6 @@ function InfoTab() {
           </div>
         )
       })()}
-    </div>
-  )
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-bg border border-border p-2">
-      <div className="text-[9px] text-muted uppercase">{label}</div>
-      <div className="font-mono text-sm text-olive-lit mt-0.5">{value}</div>
     </div>
   )
 }
